@@ -9,7 +9,6 @@ from constants import *
 import pickle
 import random
 import os
-import numpy as np
 from numpy import ma
 from do_q_table import do_q_table_rows
 from do_keep_action_q_table import action_q_table
@@ -22,12 +21,12 @@ if Train:
     Save_q_table = True
     PRINT = False
 else:
-    do_epsilon = False
+    do_epsilon = True
     Use_prior_q_table = True
     Save_q_table = False
     PRINT = False
 
-Auto_shutdown = True
+Auto_shutdown = False
 
 num_show = 1000
 

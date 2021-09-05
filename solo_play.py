@@ -69,6 +69,7 @@ for game_number in range(NUM_GAMES_SOLO):
         score_category = score_char_to_cat(input("score (1 2 3 4 5 6 Y S F L H)? --> "))
         score.score_a_category(score_category, myDice)
 
+
         print("category scored = ", score_category)
         score.print_scorecard()
 
