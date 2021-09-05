@@ -80,6 +80,39 @@ class Score:
         # print("pot max = ", max(potential_score))
         return max(potential_score)
 
+    def assess_lo_hi_score(self, score_amount, category_scored):
+        '''
+        returns a "critique" in the form of a reward of the lo/hi scoring
+        this should only be called if a non zero score was made
+        '''
+        assert score_amount >= 21  # score doesn't qualify
+        reward = 0
+        # Below: scoring too high of a low is bad.  You want a low that won't block your high
+        if category_scored == 'Low':
+            if self.is_category_available('High'):  # Must leave space for the high
+                if 21 <= score_amount < 24:
+                    reward = 40
+                elif score_amount == 25:
+                    reward = 15
+                elif score_amount >= 26:
+                    reward = -25
+            else:  # high is scored, can do what you want
+                reward = 40
+        # Below: scoring too low of a high is bad.  You want a high that won't block your low
+        if category_scored == 'High':
+            if self.is_category_available('Low'):
+                if 27 <= score_amount <= 30:
+                    reward = 40
+                elif score_amount == 26:
+                    reward = 20
+                elif score_amount == 25:
+                    reward = 15
+                elif score_amount < 25:
+                    reward = -25
+            else:
+                reward = 40
+        return reward
+
     def compute_score_hi_lo(self, category, dice):
         # computes the score for hi/lo with validation
         score_hi_lo = 0
@@ -87,8 +120,8 @@ class Score:
             # If High has been scored, check if Low lower than High
             score_low = dice.sum()
             if score_low >= 21:  # has to be 21 at least
-                if self._scores['High'][0]:  # High has been scored
-                    if score_low < self._scores['High'][1]:
+                if self._scores['High'][0] and self._scores['High'][1] != 0:  # High has been scored and not scratched!
+                    if score_low < self._scores['High'][1]:  #
                         score_hi_lo = score_low
                     else:
                         score_hi_lo = 0
@@ -100,8 +133,8 @@ class Score:
             # If Low has been scored, check if High higher than Low
             score_high = dice.sum()
             if score_high >= 22:  # has to be 22 at least
-                if self._scores['Low'][0]:  # Low has been scored
-                    if score_high > self._scores['Low'][1]:
+                if self._scores['Low'][0] and self._scores['Low'][1] != 0:  # Low has been scored and not scratched
+                    if score_high > self._scores['Low'][1]:                 # (would work w/o that and)
                         score_hi_lo = score_high
                     else:
                         score_hi_lo = 0
@@ -135,32 +168,7 @@ class Score:
         # Try new more efficient for Hi and Lo categories
         elif category == 'Low' or category == 'High':
             self._scores[category][1] = self.compute_score_hi_lo(category, dice)
-        # elif category == 'Low':
-        #     # If High has been scored, check if Low lower than High
-        #     score_low = dice.sum()
-        #     if score_low >= 21:  # has to be 21 at least
-        #         if self._scores['High'][0]:  # High has been scored
-        #             if score_low < self._scores['High'][1]:
-        #                 self._scores[category][1] = score_low
-        #             else:
-        #                 self._scores[category][1] = 0
-        #         else:
-        #             self._scores[category][1] = score_low
-        #     else:
-        #         self._scores[category][1] = 0
-        # elif category == 'High':
-        #     # If Low has been scored, check if High higher than Low
-        #     score_high = dice.sum()
-        #     if score_high >= 22:  # has to be 22 at least
-        #         if self._scores['Low'][0]:  # Low has been scored
-        #             if score_high > self._scores['Low'][1]:
-        #                 self._scores[category][1] = score_high
-        #             else:
-        #                 self._scores[category][1] = 0
-        #         else:
-        #             self._scores[category][1] = score_high
-        #     else:
-        #         self._scores[category][1] = 0
+
         else:  # these are the 1's thru 6's categories
             dice_dict = dice.get_dict()
             key = str(score_cat_to_int(category))
@@ -177,9 +185,9 @@ class Score:
 
         return self._scores[category][1]
 
-    def is_category_available(self, category_number):
+    def is_category_available(self, category_name):
 
-        return not self._scores[score_int_to_cat(category_number)][0]
+        return not self._scores[category_name][0]
 
     def print_available_cats(self):
         list_avail_cats = []
@@ -248,6 +256,33 @@ class Score:
         self.score_a_category(score_int_to_cat(action+1), dice)
 
         return action+1  # Info for caller: what category
+
+    def scratch_penalty(self, scratched_cat):
+        '''
+        Trying to impose an order in which you will scratch categories
+        for example, probably Yum should always be scratched first.
+        Also, don't scratch the Full too soon because you might get it later
+        "scratched_cat" is the category that has just been scored, or scratched I should say
+        Also, caller calls this function only when a zero has just been scored
+        '''
+        assert self.get_category_score(scratched_cat) == 0 and \
+               not self.is_category_available(scratched_cat)  # category not scratched!
+
+        penalty = 0
+        if scratched_cat == 'Yum' or scratched_cat == 'Ones':
+            penalty = 35
+        elif scratched_cat == 'Straight' or scratched_cat == 'Twos':
+            penalty = 40
+        elif scratched_cat == 'High':
+            penalty = 45
+        elif scratched_cat == 'Full' or scratched_cat == 'Low':
+            penalty = 50
+        elif scratched_cat == 'Threes' or scratched_cat == 'Fours':
+            penalty = 60
+        elif scratched_cat == 'Fives' or scratched_cat == 'Sixes':
+            penalty = 75
+        return penalty
+
 
 def score_cat_to_int(category_name):
 
@@ -381,3 +416,18 @@ def get_perfect_score(category_name):
         perfect_score = 25
 
     return perfect_score
+
+
+# function to translate number to bits
+# useful for the q_table_tracking mask
+# this is sort of related to score because the input is a q table row number and we want to know the score status
+# and use that as a mask
+def number_to_bits_vector(input_number):
+    as_bits = [0] * NUM_SCORE_CATEGORIES  # Meant for 11 bits
+    bit_pos = NUM_SCORE_CATEGORIES-1
+    while input_number > 0:
+        remainder = input_number % 2
+        as_bits[bit_pos] = remainder
+        input_number = input_number // 2
+        bit_pos -= 1
+    return as_bits

@@ -88,8 +88,27 @@ class DiceSet:
         self._dice = sorted(self._dice)
         self.as_dict()
 
-    def roll_list_reroll(self):  # uses list reroll to mask
+    def roll_Heavy(self):
+        # slants the roll towards high values
+        for i in range(0, NUM_DICE):
+            rand_num = np.random.randint(1, 10)
+            if 1 <= rand_num < 2:
+                die = 1
+            elif 2 <= rand_num < 3:
+                die = 2
+            elif 3 <= rand_num < 4:
+                die = 3
+            elif 4 <= rand_num < 6:
+                die = 4
+            elif 6 <= rand_num < 8:
+                die = 5
+            elif 8 <= rand_num < 10:
+                die = 6
+            self._dice[i] = die
+        self._dice = sorted(self._dice)
+        self.as_dict()
 
+    def roll_list_reroll(self):  # uses list reroll to mask
         j = 0
         for i in self._list_reroll:
             if (i == True) or (self._dice[j] is None):
