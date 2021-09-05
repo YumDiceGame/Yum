@@ -17,7 +17,7 @@ import time
 Train = True
 if Train:
     do_epsilon = True
-    Use_prior_q_table = False
+    Use_prior_q_table = True
     Save_q_table = True
     PRINT = False
 else:
