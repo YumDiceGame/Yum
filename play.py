@@ -9,7 +9,7 @@ import numpy as np
 from numpy import ma
 from do_q_table import do_q_table_rows
 from do_keep_action_q_table import action_q_table
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 PRINT = False
 
@@ -142,7 +142,7 @@ if print_record_games:
         file_record_games.writelines(game_events_to_record)
 
 # Histogram
-np_scores = np.array(scores)
-num_bins = 30
-n, bins, patches = plt.hist(scores, density=True, bins=30)  #  num_bins, facecolor='blue', alpha=0.5)
-plt.show()
+# np_scores = np.array(scores)
+# num_bins = 30
+# n, bins, patches = plt.hist(scores, density=True, bins=30)  #  num_bins, facecolor='blue', alpha=0.5)
+# plt.show()

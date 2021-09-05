@@ -12,20 +12,21 @@ from do_q_table import do_q_table_rows
 import numpy as np
 import time
 
-do_epsilon = False
+do_epsilon = True
 Testing_Seq = False
 Use_prior_q_table = True
 Save_q_table = True
-Auto_shutdown = True
+Auto_shutdown = False
 PRINT = False
 PRINT_L2 = False
+track_diff = True
 num_show = 1000
 
 # Exploration settings
 # Epsilon is not a constant, it will be decayed
 # High epsilon means high random action
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = NUM_EPISODES//2
+END_EPSILON_DECAYING = NUM_EPISODES / 2
 
 if do_epsilon:
     epsilon = 1
@@ -49,6 +50,18 @@ else:
 
 myDice = DiceSet()
 score = Score()
+
+# This is to try to follow the progress of the q_table
+# if the maxes stop moving around, then we have converged (for better or for worse!)
+if track_diff:
+    q_table_track_max = np.zeros(q_table_height)
+    # collect all the maxes per row ... initially it's meaningless
+    for q_table_row in range(0, q_table_height):
+        q_table_track_mask = number_to_bits_vector(q_table_row % TWO_TO_NUM_SCORE_CATEGORIES)
+        q_table_track_max[q_table_row] = (ma.masked_array(q_table_scoring[q_table_row][0:NUM_SCORE_CATEGORIES],
+                                                          q_table_track_mask)).argmax()
+    with open("q_table_scoring_track_progress.txt", "w") as f:
+        f.write(f"episode\tdiff\n")
 
 scores = []
 yum_scores = 0  # how many times it will score Yum
@@ -78,12 +91,15 @@ for episode in range(1, NUM_EPISODES):
             print("***")
 
         # Inject some Yums, Straights and Fulls so that the algorithm can see enough of them
-        if episode % 100 == 0 and Turn == Turn_for_injection:
-            myDice.roll_Yum()
-        elif episode % 110 == 0 and Turn == Turn_for_injection:
-            myDice.roll_Straight()
-        elif episode % 120 == 0 and Turn == Turn_for_injection:
-            myDice.roll_Full()
+        if Turn == Turn_for_injection:
+            if episode % 8 == 0:
+                myDice.roll_Yum()
+            elif episode % 7 == 0:
+                myDice.roll_Straight()
+            elif episode % 6 == 0:
+                myDice.roll_Full()
+            elif episode % 10 == 0:
+                myDice.roll_Heavy()
         else:
             myDice.roll()
 
@@ -91,25 +107,19 @@ for episode in range(1, NUM_EPISODES):
         #     # Set dice to pre-programmed sequence for quick test
         #     myDice.seq(Turn)
 
-        if PRINT:
-            print("roll = ", myDice)
-            print("Turn = ", Turn)
-
         # The state now is a concatenation of the dice dict and scored cats
         state = myDice.get_dict_as_vector() + score.get_available_cat_vector()
         # Get q_table_row number as "state_index"
 
         # time_state_access = time.time()
         # segmented lookup
+        # print(myDice)
         state_index_dice = list_of_die_face_counts.index(myDice.get_dict_as_vector())
         state_index_score = list_scoreable_categories.index(score.get_available_cat_vector())
         state_index_calc = state_index_dice * TWO_TO_NUM_SCORE_CATEGORIES + state_index_score
         state_index = state_index_calc  # q_table_rows.index(state) index() is slow!
         # print(f"STATE INDEX CALC = {state_index_calc}  STATE INDEX = {state_index}")
         # print(f"time elapsed for state index = {time.time() - time_state_access}")
-
-        if PRINT:
-            print("state = ", state)
 
         if np.random.random() > epsilon:
             action = (ma.masked_array(q_table_scoring[state_index][0:NUM_SCORE_CATEGORIES],
@@ -123,8 +133,8 @@ for episode in range(1, NUM_EPISODES):
             masked_random_actions = possible_random_actions[possible_random_actions.mask == False]
             action = random.choice(masked_random_actions)
 
-        if PRINT:
-            print("action = ", action)
+        scored_cat = score_int_to_cat(action + 1)
+        scored_amount = score.get_category_score(scored_cat)
 
         # Before scoring, save face_max_die_count
         # Doing this because don't want to mask for Yum with other categories (Yum is always ok)
@@ -134,81 +144,110 @@ for episode in range(1, NUM_EPISODES):
             max_die_count, face_max_die_count = myDice.max_die_count_for_available_category(score.get_available_cat_vector())
 
         # Score category
-        if PRINT:
-            print(f"Trying to score in category {action+1}")
-        # re_score_alert = score.score_category_allow_re_score(score_int_to_cat(action+1), myDice.dice())
-        re_score_alert = score.score_a_category(score_int_to_cat(action + 1), myDice)
+        scored_cat = score_int_to_cat(action + 1)
+        score.score_a_category(scored_cat, myDice)
+        scored_amount = score.get_category_score(scored_cat)
+
+        # shorthand defs:
+        can_yum = myDice.is_yum() and score.is_category_available('Yum')
+        can_full = myDice.is_full() and score.is_category_available('Full')
+        can_straight = myDice.is_straight() and score.is_category_available('Straight')
+
+        # if episode % num_show == 0:
+        #     print(f"dice = {myDice} scored cat = {scored_cat} scored amount = {scored_amount}")
 
         # Reward
-        reward = score.get_total_score()
+        reward = 0
 
-
-        # First thing: assign "special punishments"
-        # Gotta punish if it makes the classic wrong move of scoring in wrong category
-        # special_reward = 0
-        # If you have Yum and you are not scoring it, punish (if Yum is available of course)
-        if score_int_to_cat(action+1) != 'Yum' and myDice.is_yum() and not score.get_score_dict()['Yum'][0]:
-            reward -= 120
-            # special_reward = reward
-            yum_scores += 1
-        elif (score_int_to_cat(action+1) != 'Straight') and myDice.is_straight() and not score.get_score_dict()['Straight'][0]:
-            reward += -60
-            # special_reward = reward
-        # Should have scored full (if full is available)
-        elif (score_int_to_cat(action+1) != 'Full') and myDice.is_full() and not score.get_score_dict()['Full'][0]:
-            reward += -60
-            # special_reward = reward
-
-
-        # Above the line items
-        elif (action+1) <= NUM_SCORE_CAT_ABOVE_LINE:
-        # Score in the 1s - 6s if you have a good hand (if category available)
-            if (action+1) != face_max_die_count:  # Scoring wrong category
-                reward += -90
-                # special_reward = reward
+        if can_yum:
+            if scored_cat == 'Yum':
+                reward += 120
+                print("===============================================================scored Yum)")
             else:
-                if max_die_count <= 2:  # Right category, but too low score
-                    reward += (-30) * face_max_die_count  # prorate according to face max die count
-                    # because low score in 6's not as bad as low score in 1's
+                reward += -240
+            if episode % num_show == 0:
+                print(f"Yum check {reward}")
+        else:  # anything other than Yum
+            # prioritize above the line scoring
+            if max_die_count >= 3 and not can_full:  #
+                if scored_cat != score_int_to_cat(face_max_die_count):
+                    reward -= (90 + 30*face_max_die_count)  # really need to score 3 of a kind above the line!
+                                                            # also pro-rate
                 else:  # max_die_count >= 3:  # Right category, and pretty good score, reward!
                     reward += 30 * face_max_die_count  # prorate according to face max die count
+                # if episode % num_show == 0:
+                #     print(f"High mdc check {reward}")
+            elif can_straight:
+                if scored_cat == 'Straight':
+                    reward += 100
+                    print("--------------------Scored Straight")
+                    print("--------------------Scored Straight")
+                else:
+                    reward += -200
+                if episode % num_show == 0:
+                    print(f"Straight check {reward}")
+            elif can_full:
+                if scored_cat == 'Full':
+                    reward += 150
+                    print("--------------------Scored Full")
+                    print("--------------------Scored Full")
+                else:
+                    reward += -200
+                if episode % num_show == 0:
+                    print(f"Full check {reward}")
+                # special_reward = reward
 
-        ### Hi Lo --->
-        # Hi >= 22
-        # 21 <= Lo < Hi
-        elif (dice_sum := myDice.sum()) > 21 and (scored_cat := score_int_to_cat(action + 1)) != 'Full'\
-                and (scored_cat != 'Yum'):
-            # define shorthand quantities
-            hi_scored = score.get_score_dict()['High'][0]
-            hi_score = score.get_score_dict()['High'][1]
-            lo_scored = score.get_score_dict()['Low'][0]
-            lo_score = score.get_score_dict()['Low'][1]
+            # Above the line items
+            elif scored_cat in ABOVE_THE_LINE_CATEGORIES:
+                if max_die_count <= 2:  # Right category, but too low score 2 is bad
+                    reward += (-30*face_max_die_count)  # prorate according to face max die count
+                    if 0 < max_die_count <= 1:  # 1 is worse
+                        reward += (-45*face_max_die_count)  # prorate according to face max die count
+                    # because low score in 6's not as bad as low score in 1's
+                    # if episode % num_show == 0:
+                    #     print(f"low mdc {reward}")
 
-            # Next: missing scoring a good low
-            if hi_scored and not lo_scored:
-                if (scored_cat != 'Low') and (dice_sum < hi_score):
-                    reward += -70
-            # Next: don't want to miss out on scoring high (given low is scored):
-            if lo_scored and not hi_scored:
-                if (scored_cat != 'High') and (dice_sum > lo_score):
-                    reward += -75
-            # Give praise below:
-            elif scored_cat == 'High':
-                reward += 30
-                if lo_scored:
-                    reward += 40
-            elif scored_cat == 'Low':
-                reward += 30
-                if hi_scored:
-                    reward += 40
+            # Hi Lo --->
+            # Hi >= 22
+            # 21 <= Lo < Hi
+            elif scored_cat == 'High' or scored_cat == 'Low':
+                # define shorthand quantities
+                dice_sum = myDice.sum()
+                hi_scored = not score.is_category_available('High')
+                hi_score = score.get_category_score('High')
+                lo_scored = not score.is_category_available('Low')
+                lo_score = score.get_category_score('Low')
+                if dice_sum >= 21:
+                    if (hi_scored and hi_score > 0) and (lo_scored and lo_score > 0):
+                        reward += 70  # we managed to score both high and low!
+                        # if episode % num_show == 0:
+                        #     print(f"hi and lo! {reward}")
+                    elif scored_amount > 0:
+                        # the below controls if you scored a too aggressive hi or low
+                        # note that scored_amount isn't necessarily equal to dice sum!
+                        # scored amount could be zero!
+                        reward += score.assess_lo_hi_score(scored_amount, scored_cat)
+                        # if episode % num_show == 0:
+                        #     print(f"hi lo assess {reward}")
+                    else:  # you were locked out!
+                        reward -= 40
+                        # if episode % num_show == 0:
+                        #     print(f"hi lo locked out {reward}")
+                else:  # dice sum too low
+                    reward -= 40
+                    # if episode % num_show == 0:
+                    #     print(f"hi lo no dice {reward}")
+                # Hi Lo <---
 
-        ### Hi Lo <---
+            # Scratching a category --->
+            if scored_amount == 0:
+                reward -= score.scratch_penalty(scored_cat)
+                # if episode % num_show == 0:
+                #     print(f"scratch {reward}")
+            # Scratching a category <---
 
-        if PRINT:
-            print("get tot score = ", score.get_total_score())
-            print("reward = ", reward)
-            print("current score dict = ", score.get_score_dict())
-            print("avail cats = ", score.get_available_cat_vector())
+        # if episode % num_show == 0:
+        #     print("reward end of turn = ", reward)
 
         # New state
         new_state = myDice.get_dict_as_vector() + score.get_available_cat_vector()
@@ -219,10 +258,6 @@ for episode in range(1, NUM_EPISODES):
         new_state_index_calc = new_state_index_dice * TWO_TO_NUM_SCORE_CATEGORIES + new_state_index_score
         new_state_index = new_state_index_calc  # q_table_rows.index(new_state) index() is slow!
 
-        if PRINT:
-            print("new state = ", new_state)
-            print("new_state_index = ", new_state_index)
-
         # Maximum possible Q value in next step (for new state)
         max_future_q = np.max(q_table_scoring[new_state_index][action])
         if PRINT:
@@ -230,15 +265,9 @@ for episode in range(1, NUM_EPISODES):
 
         # Current Q value (for current state and performed action)
         current_q = q_table_scoring[state_index][action]
-        if PRINT:
-            print("current q = ", current_q)
 
         # And here's our equation for a new Q value for current state and dice_action
         new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
-        # if special_reward == 0:
-        #     new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
-        # else:
-        #     new_q = special_reward
 
         # Update Q table with new Q value
         q_table_scoring[state_index][action] = new_q
@@ -251,13 +280,30 @@ for episode in range(1, NUM_EPISODES):
 
     if episode % num_show == 0:
         print("score = ", score.get_total_score())
-        score.print_scorecard()
+        # score.print_scorecard()
 
-    # While not all_scored
-
-    # game_score = score.get_total_score()
-    # print("total score = ", game_score)
-    # scores.append(game_score)
+    if episode != 0 and episode % EVAL_Q_TABLE == 0 and track_diff:
+        # Evaluate q table
+        # compare the new q_table maxes to the previous ones
+        # and count the number of differences
+        count_diff_maxes = 0
+        for q_table_row in range(0, q_table_height):
+            # identify differences
+            q_table_track_mask = number_to_bits_vector(q_table_row % TWO_TO_NUM_SCORE_CATEGORIES)
+            qt_row_max = (ma.masked_array(q_table_scoring[q_table_row][0:NUM_SCORE_CATEGORIES], q_table_track_mask)).argmax()
+            if q_table_track_max[q_table_row] != qt_row_max:
+                # with open("q_table_scoring_diff.txt", "a") as f2:
+                #     f2.write(f"---\n")
+                #     f2.write(f"row = {q_table_row} was {q_table_track_max[q_table_row]} is {qt_row_max}\n")
+                #     f2.write(f"qtable = {q_table_scoring[q_table_row]}\n")
+                #     f2.write(f"mask = {q_table_track_mask}\n")
+                prnt_qe_t_max = q_table_track_max[q_table_row]
+                count_diff_maxes += 1
+            # update q_table_track_max for comparison next EVAL_Q_TABLE
+            q_table_track_max[q_table_row] = qt_row_max
+        print(f"q_table_diff = {count_diff_maxes}\n")
+        with open("q_table_scoring_track_progress.txt", "a") as f:
+            f.write(f"{episode}\t{count_diff_maxes}\n")
 
     # Decaying is being done every episode if episode number is within decaying range
     if do_epsilon:
@@ -276,4 +322,6 @@ if Save_q_table:
 # If you want to train a long one and want to shutdown unattended
 if Auto_shutdown:
     os.system("shutdown -P now")
+
+
 
