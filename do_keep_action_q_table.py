@@ -65,16 +65,16 @@ class action_q_table(DiceSet):
                                     write_file.write("   ")
                                     # go thru all the possible keep actions
                                     # we mask the action if not all the dice are included in the keep action
-                                    # One difference: action
+                                    # One difference: action when we are close to a straight: the 'K4' action
                                     action_mask = ""
                                     for keep_action in self.list_set_keep_actions:
                                         if keep_action == {'K4'}:
                                             if len(collections.Counter(self._dice)) == 4:
                                                 # This means that there is one pair and thee singletons
                                                 # and we need an action specifically for this case
-                                                action_mask += '0'
+                                                action_mask += self.do_action_mask_k4()
                                             else:
-                                                action_mask += '1'
+                                                action_mask += '1'  # doesn't qualify for K4 action
                                         elif keep_action.issubset(self.as_set()):
                                             action_mask += '0'
                                         else:
@@ -108,45 +108,18 @@ class action_q_table(DiceSet):
         # don't forget to revers it:
         return list_of_dice_rolls_no_dups[::-1]
 
-    # def all_actions_to_dice_to_keep(self):
-    #     # UPdate to 6 dice version!
-    #     # Makes a corespondence between the action number and the dice to keep
-    #     # Replaces "all_actions_to_list_reroll"
-    #     # See "roll_masks.ods", look at the top row
-    #     actions_dict = {0: [], 1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [1, 2], 7: [1, 3], 8: [1, 4], 9: [1, 5],
-    #                     10: [2, 3], 11: [2, 4], 12: [2, 5], 13: [3, 4], 14: [3, 5], 15: [4, 5], 16: [1, 2, 3],
-    #                     17: [1, 2, 4], 18: [1, 2, 5], 19: [1, 3, 4], 20: [1, 3, 5], 21: [1, 4, 5], 22: [2, 3, 4],
-    #                     23: [2, 3, 5], 24: [2, 4, 5], 25: [3, 4, 5], 26: [1, 2, 3, 4], 27: [1, 2, 3, 5],
-    #                     28: [1, 2, 4, 5], 29: [1, 3, 4, 5], 30: [2, 3, 4, 5]}
-    #     return actions_dict
+    def do_action_mask_k4(self):
 
-    # def get_roll_and_action_masks_dict(self):
-    #     # Associate an action mast to a roll
-    #     roll_to_mask_dict = {}
-    #     with open("masks_n_rolls.txt", "r") as q_table_rows:
-    #         lines = q_table_rows.readlines()
-    #     for line in lines:
-    #         line = line.strip("\n")
-    #         line_split = line.split()
-    #         # Action mask:
-    #         line_action_mask = np.fromstring(line_split[0], np.int8) - 48
-    #         # the roll
-    #         line_roll = line_split[1]
-    #         # Finally the long awaited simple dict of roll/mask!
-    #         roll_to_mask_dict[line_roll] = line_action_mask
-    #     return roll_to_mask_dict
+        # this is for keeping 4 dice when you're missing
+        # only on for a straight
+        k4_action_mask = '0'
+        singletons = list(self.as_set())
+        # check that we are 1 die away from a straight
+        for i in range(len(singletons) - 1):
+            if singletons[i + 1] - singletons[i] > 2:
+                # we are not ... so mask at 1
+                k4_action_mask = '1'
 
-    # def do_scoreable_categories(self):
-    #     # as seen elsewhere, but now do a little function
-    #     scoreable_categories = []
-    #     for c1 in range(0, 2):  # "c" for category
-    #         for c2 in range(0, 2):
-    #             for c3 in range(0, 2):
-    #                 for c4 in range(0, 2):
-    #                     for c5 in range(0, 2):
-    #                         for c6 in range(0, 2):
-    #                             scoreable_categories.append([c1, c2, c3, c4, c5, c6])
-    #     return scoreable_categories
-
+        return k4_action_mask
 
 
