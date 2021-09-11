@@ -17,7 +17,7 @@ import time
 Train = True
 if Train:
     do_epsilon = True
-    Use_prior_q_table = True
+    Use_prior_q_table = False
     Save_q_table = True
     PRINT = False
 else:
@@ -26,7 +26,7 @@ else:
     Save_q_table = False
     PRINT = False
 
-Auto_shutdown = False
+Auto_shutdown = True
 
 num_show = 1000
 
@@ -119,7 +119,7 @@ for episode in range(NUM_EPISODES):
         for roll in range(2, NUM_ROLLS+1):
 
             # time_start_roll = time.time()
-           # This is the observation part of the state
+            # This is the observation part of the state
             # old style when we were doing only max die count
             # max_die_count = face_max_die_count = 0
             # state_max_die_count_and_face = myDice.max_die_count_for_available_category(score.get_available_cat_vector())

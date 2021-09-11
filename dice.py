@@ -226,6 +226,21 @@ class DiceSet:
             if count == 2:  # 2 for the pair
                 return die_face
 
+    def is_almost_straight(self):
+        '''
+        Are we within 1 die of a straight
+        '''
+        almost_straight = True
+        if len(collections.Counter(self._dice)) == 4:
+            singletons = list(self.as_set())
+            # check that we are 1 die away from a straight
+            for i in range(len(singletons) - 1):
+                if singletons[i + 1] - singletons[i] > 2:
+                    # we are not ... so mask at 1
+                    almost_straight = False
+        else:
+            almost_straight = False
+
     def is_two_pairs(self):
 
         cnt_pairs = 0
