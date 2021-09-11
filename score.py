@@ -63,20 +63,25 @@ class Score:
         # given avail categories, what is the best we can get
         potential_score = [0]
         for category in self._scores:
-            if not self._scores[category][0]:  # Category available
+            # if not self._scores[category][0]:  # Category available
+            if self.is_category_available(category):  # Category available
                 if category == 'Yum':
                     if dice.is_yum(): potential_score.append(30)
                 elif category == 'Straight':
                     if dice.is_straight(): potential_score.append(25)
+                    elif dice.is_almost_straight(): potential_score.append(10)  # close to straight
                 elif category == 'Full':
                     if dice.is_full(): potential_score.append(25)
+                    elif dice.is_two_pairs():
+                        potential_score.append(15)  # almost full
                 elif category == 'High' or category == 'Low':
                     potential_score.append(self.compute_score_hi_lo(category, dice))
                 else:  # 1's thru 6's
                     # commented out below the plain score
                     # potential_score.append(score_cat_to_int(category) * dice.get_dict()[str(score_cat_to_int(category))])
                     # we want to a bit normalize wrt dice usage for the above the line categories
-                    potential_score.append(5 * dice.get_dict()[str(score_cat_to_int(category))])
+                    # boost it a bit -> 6x instead of 5x
+                    potential_score.append(6 * dice.get_dict()[str(score_cat_to_int(category))])
         # print("pot max = ", max(potential_score))
         return max(potential_score)
 
