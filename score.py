@@ -34,6 +34,40 @@ class Score:
 
         return self._total_score
 
+    def get_above_the_line_success(self):
+        '''
+        return a vector to help the score tracking in keeping_learning
+        "1" means the above line category was scored well
+        Order is bonus, straight, full, low, high, yum
+        '''
+        success_scores = []
+        if self.get_bonus() != 0:
+            success_scores.append(1)
+        else:
+            success_scores.append(0)
+        if self._scores['Straight'][1] != 0:
+            success_scores.append(1)
+        else:
+            success_scores.append(0)
+        if self._scores['Full'][1] != 0:
+            success_scores.append(1)
+        else:
+            success_scores.append(0)
+        if self._scores['Low'][1] != 0:
+            success_scores.append(1)
+        else:
+            success_scores.append(0)
+        if self._scores['High'][1] != 0:
+            success_scores.append(1)
+        else:
+            success_scores.append(0)
+        if self._scores['Yum'][1] != 0:
+            success_scores.append(1)
+        else:
+            success_scores.append(0)
+
+        return success_scores
+
     def get_bonus(self):
         # calculates total score above the line
         # return 25 if that score is 63 or more, 0 otherwise

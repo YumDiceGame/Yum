@@ -26,9 +26,8 @@ else:
     Save_q_table = False
     PRINT = False
 
-Auto_shutdown = True
+Auto_shutdown = False
 
-num_show = 1000
 
 def calc_row_index():
     # We calculate the row index fairly often ...
@@ -55,7 +54,7 @@ else:
 # with open("q_table_2d_yum.pickle", "rb") as f:
 #     q_table = pickle.load(f)
 # And "" for the scoring actions
-with open("q_table_scoring.pickle", "rb") as score_q_table_file:  # 2M means 2M episodes ran
+with open("q_table_scoring.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
 # Create q_table_scoring_rows
@@ -87,18 +86,23 @@ q_table_track_max = np.zeros(q_table_height)
 # collect all the maxes per row ... initially it's meaningless
 for q_table_row in range(0, q_table_height):
     q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
-with open("q_table_track_progress", "w") as f:
+with open("q_table_track_progress.txt", "w") as f:
     f.write(f"episode\tdiff\n")
 
+# This is to follow the evolution of the scoring
+with open("score_track_progress.txt", "w") as f:
+    f.write(f"episode\tscore\tbonus\tstraight\tfull\tlow\thigh\tyum\tdiff\n")
 
 myDice = DiceSet()
 score = Score()
 scores = []
+track_score = True
+track_average_score = 0
+track_score_array = np.zeros(6)
 
-for episode in range(NUM_EPISODES):
+for episode in range(NUM_EPISODES+1):
 
     turn = 0
-
     score.reset_scores()
     all_scored = False
 
@@ -111,7 +115,7 @@ for episode in range(NUM_EPISODES):
         #     score.get_available_cat_vector())
         potential_max_score_previous = score.get_potential_max_score(myDice)
 
-        if PRINT and (episode % num_show) == 0:
+        if PRINT and (episode % NUM_SHOW) == 0:
             print("initial roll ", myDice.get_num_rolls())
             print(myDice)
             # print(f"max die count previous = {max_die_count_previous} face max die count = {face_max_die_count}")
@@ -154,7 +158,7 @@ for episode in range(NUM_EPISODES):
                                                           keeping_actions_masks[myDice.as_short_string()])
                 masked_random_actions = possible_random_actions[possible_random_actions.mask == False]
                 action = random.choice(masked_random_actions)
-                if PRINT and episode % num_show == 0:
+                if PRINT and episode % NUM_SHOW == 0:
                     print("possible random actions = ", possible_random_actions)
                     print("masked random actions = ", masked_random_actions)
                     print("action RANDOM")
@@ -164,12 +168,12 @@ for episode in range(NUM_EPISODES):
                 #                           keeping_actions_masks[myDice.as_short_string()])).argmax()
                 action = (ma.masked_array(q_table_keeping[state_index][0:NUM_KEEPING_ACTIONS],
                                           keeping_actions_masks[myDice.as_short_string()])).argmax()
-                if PRINT and episode % num_show == 0:
+                if PRINT and episode % NUM_SHOW == 0:
                     print("action TABLE")
             myDice.make_list_reroll_for_selected_die_faces(action_to_dice_to_keep[action])
             # myDice.set_list_reroll(action_to_rerolls[action])
             myDice.roll_list_reroll()
-            if PRINT and episode % num_show == 0:
+            if PRINT and episode % NUM_SHOW == 0:
                 print(f"action mask = {keeping_actions_masks[myDice.as_short_string()]}")
                 print(f"roll {myDice.get_num_rolls()} action {action} list re-roll {myDice.get_list_reroll()}"
                       f" new dice {myDice} ")
@@ -266,11 +270,6 @@ for episode in range(NUM_EPISODES):
         q_table_scoring_index = q_table_scoring_index_dice * TWO_TO_NUM_SCORE_CATEGORIES + q_table_scoring_index_score
         category_scored = score.score_with_q_table(q_table_scoring, q_table_scoring_index, myDice)
 
-        if PRINT and episode % num_show == 0:
-            print("dice = ", myDice)
-            print("category scored = ", category_scored)
-            print("current score = ", score.get_score_dict())
-            print("avail cats = ", score.get_available_cat_vector())
         # SCORE CATEGORY <---
 
         all_scored = score.all_scored()
@@ -280,17 +279,34 @@ for episode in range(NUM_EPISODES):
         if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:
             epsilon -= epsilon_decay_value
 
-    # game_score = score.get_total_score()
-    # scores.append(game_score)
-    # print(f"Total score for game {episode + 1} is {game_score}\n")
-
-    if episode % num_show == 0:
+    if episode % NUM_SHOW == 0:
         print("episode = ", episode)
         print("score = ", score.get_total_score())
         score.print_scorecard()
         print("\n")
 
-    if episode !=0 and episode % EVAL_Q_TABLE == 0:
+    # Track scoring: how does it evolve over time --->
+    if (episode+NUM_GAMES) % NUM_TRACK_SCORE == 0:
+        track_score = True
+        track_average_score = 0
+        track_score_array = np.zeros(6)
+    elif episode % NUM_TRACK_SCORE == 0:
+        track_score = False
+    if track_score:
+        # accumulation for average score
+        track_average_score += score.get_total_score()
+        # accumulation for tracking above the line items such as straight, full...
+        track_score_array = np.add(track_score_array, np.array(score.get_above_the_line_success()))
+
+    if episode != 0 and episode % NUM_TRACK_SCORE == 0:
+        with open("score_track_progress.txt", "a") as f:
+            f.write(f"{episode}\t{track_average_score/NUM_GAMES}")
+            for item in track_score_array:
+                f.write(f"\t{item / NUM_GAMES}")
+            f.write("\n")
+    # Track scoring: how does it evolve over time <---
+
+    if episode != 0 and episode % EVAL_Q_TABLE == 0:
         # Evaluate q table
         # compare the new q_table maxes to the previous ones
         # and count the number of differences
@@ -302,7 +318,7 @@ for episode in range(NUM_EPISODES):
             # update q_table_track_max for comparison next EVAL_Q_TABLE
             q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
         print(f"q_table_diff = {count_diff_maxes}\n")
-        with open("q_table_track_progress", "a") as f:
+        with open("q_table_track_progress.txt", "a") as f:
             f.write(f"{episode}\t{count_diff_maxes}\n")
 
     # Save q table periodically
