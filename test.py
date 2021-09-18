@@ -7,29 +7,17 @@ myDice = DiceSet()
 
 myScore = Score()
 
-myDice.roll_Heavy()
+
+myDice.set([1, 1, 1, 1, 1])
+# myDice.set([1, 4, 4, 4, 4])
+# myDice.set([2, 2, 4, 4, 6])
 print(myDice)
-print(myDice.sum())
 
-myDice.set([1, 1, 4, 5, 6])
 
-# if len(collections.Counter(myDice.dice())) == 4:
-#     singletons = list(myDice.as_set())
-#     mask = '0'
-#     for i in range(len(singletons)-1):
-#         print(singletons[i])
-#         if singletons[i+1] - singletons[i] > 2:
-#             mask = '1'
-#     print("mask = ", mask)
-#
-#
-# action_table = action_q_table()
-# # keep actions plus masks:
-# action_to_dice_to_keep, keeping_actions_masks = action_table.print_all_action_q_table()
+if myDice.is_almost_straight():
+    print("almost straight")
+if myDice.is_two_pairs():
+    print("almost full")
+if myDice.is_almost_yum():
+    print("almost yum")
 
-print(3/2)
-
-v = np.array([1, 0, 1, 0, 0])
-u = np.array([0, 1, 1, 1, 0])
-w = np.add(u,v)
-print(f"{w}")

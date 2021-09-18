@@ -176,6 +176,7 @@ class DiceSet:
     def set(self, _dice):
 
         self._dice = _dice
+        self.as_dict()
 
     def get_die_at_pos(self, pos):
 
@@ -207,6 +208,10 @@ class DiceSet:
 
         return len(collections.Counter(self._dice)) == 1
 
+    def is_almost_yum(self):
+        self.as_dict()
+        return 4 in self._dict.values()
+
     def is_straight(self):
 
         return self._dice == [1, 2, 3, 4, 5] or self._dice == [2, 3, 4, 5, 6]
@@ -231,15 +236,24 @@ class DiceSet:
         Are we within 1 die of a straight
         '''
         almost_straight = True
-        if len(collections.Counter(self._dice)) == 4:
-            singletons = list(self.as_set())
-            # check that we are 1 die away from a straight
-            for i in range(len(singletons) - 1):
-                if singletons[i + 1] - singletons[i] > 2:
-                    # we are not ... so mask at 1
-                    almost_straight = False
-        else:
+        one_chance = False  # it can be more that one of diff only once
+        if self.is_straight():
             almost_straight = False
+        else:
+            if len(collections.Counter(self._dice)) < 4:
+                almost_straight = False
+            else:
+                elements = list(self.as_set())
+                # check that we are 1 die away from a straight
+                for i in range(len(elements) - 1):
+                    if elements[i + 1] - elements[i] > 2:
+                        # we are not ... so mask at 1
+                        almost_straight = False
+                    elif elements[i + 1] - elements[i] > 1:
+                        if one_chance:
+                            almost_straight = False
+                        one_chance = True
+        return almost_straight
 
     def is_two_pairs(self):
 
@@ -326,11 +340,16 @@ class DiceSet:
             else:
                 # Reset masked dictionary:
                 self._masked_dict = {}
+                # need to choke down the avail cat vector to above the line
+                avail_cat_vector_above_line = []
+                for j in range(NUM_SCORE_CAT_ABOVE_LINE):
+                    avail_cat_vector_above_line.append(avail_cat_vector[j])
                 i = 0
                 for die in self._dict:
-                    if not avail_cat_vector[i]:
+                    if not avail_cat_vector_above_line[i]:
                         self._masked_dict[die] = self._dict[die]
                     i += 1
+                # print("avail_cat_vector = ", avail_cat_vector_above_line)
                 max_die_count_local = int(max(self._masked_dict.values()))
 
                 # Let's also return the face in the same function

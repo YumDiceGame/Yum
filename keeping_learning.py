@@ -39,8 +39,10 @@ def calc_row_index():
 # Exploration settings
 # Epsilon is not a constant, it will be decayed
 # High epsilon means high random action
-START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = NUM_EPISODES//2
+# START_EPSILON_DECAYING = 1
+# END_EPSILON_DECAYING = NUM_EPISODES//2
+START_EPSILON_DECAYING = NUM_EPISODES//2
+END_EPSILON_DECAYING = NUM_EPISODES-1
 
 if do_epsilon:
     epsilon = 1
@@ -91,14 +93,17 @@ with open("q_table_track_progress.txt", "w") as f:
 
 # This is to follow the evolution of the scoring
 with open("score_track_progress.txt", "w") as f:
-    f.write(f"episode\tscore\tbonus\tstraight\tfull\tlow\thigh\tyum\tdiff\n")
+    f.write(f"episode\tepsilon\tscore\tbonus\tstraight\tfull\tlow\thigh\tyum\n")
 
 myDice = DiceSet()
 score = Score()
 scores = []
+
+# for score tracking -->
 track_score = True
 track_average_score = 0
 track_score_array = np.zeros(6)
+# for score tracking <--
 
 for episode in range(NUM_EPISODES+1):
 
@@ -110,19 +115,26 @@ for episode in range(NUM_EPISODES+1):
         turn += 1
         myDice.reset()
         myDice.roll()
-        # careful with this, not general!!
-        # max_die_count_previous, face_max_die_count = myDice.max_die_count_for_available_category(
-        #     score.get_available_cat_vector())
+        # max_die_count: it's back
+        if not score.is_above_the_line_all_scored():
+            max_die_count_previous, face_max_die_count = myDice.max_die_count_for_available_category(
+                score.get_available_cat_vector())
+
+        # for tracking when you have almost straight, full or yum
+        almost_straight_list_per_roll = []
+        almost_full_list_per_roll = []
+        almost_yum_list_per_roll = []
+
+        almost_straight_list_per_roll.append(myDice.is_almost_straight())
+        almost_full_list_per_roll.append(myDice.is_two_pairs())
+        almost_yum_list_per_roll.append(myDice.is_almost_yum())
+
         potential_max_score_previous = score.get_potential_max_score(myDice)
 
-        if PRINT and (episode % NUM_SHOW) == 0:
-            print("initial roll ", myDice.get_num_rolls())
-            print(myDice)
-            # print(f"max die count previous = {max_die_count_previous} face max die count = {face_max_die_count}")
+        # print(f"max die count previous = {max_die_count_previous} face max die count = {face_max_die_count}")
 
         for roll in range(2, NUM_ROLLS+1):
 
-            # time_start_roll = time.time()
             # This is the observation part of the state
             # old style when we were doing only max die count
             # max_die_count = face_max_die_count = 0
@@ -170,9 +182,15 @@ for episode in range(NUM_EPISODES+1):
                                           keeping_actions_masks[myDice.as_short_string()])).argmax()
                 if PRINT and episode % NUM_SHOW == 0:
                     print("action TABLE")
+
             myDice.make_list_reroll_for_selected_die_faces(action_to_dice_to_keep[action])
-            # myDice.set_list_reroll(action_to_rerolls[action])
             myDice.roll_list_reroll()
+
+            # for tracking when you have almost straight full or yum
+            almost_straight_list_per_roll.append(myDice.is_almost_straight())
+            almost_full_list_per_roll.append(myDice.is_two_pairs())
+            almost_yum_list_per_roll.append(myDice.is_almost_yum())
+
             if PRINT and episode % NUM_SHOW == 0:
                 print(f"action mask = {keeping_actions_masks[myDice.as_short_string()]}")
                 print(f"roll {myDice.get_num_rolls()} action {action} list re-roll {myDice.get_list_reroll()}"
@@ -193,10 +211,11 @@ for episode in range(NUM_EPISODES+1):
             #   But if the potential max score was large and it stayed large, then we give a large reward
             # if the potential max score went up there is a reward, and a large one if it went up by 20 or more
             # So we need a function that will return potential max score
-            # Ok that's the next step.  Now let's stick with max die count
-            #
-            #max_die_count, face_max_die_count = myDice.max_die_count_for_available_category(
-            #    score.get_available_cat_vector())
+
+            if not score.is_above_the_line_all_scored():
+                max_die_count, face_max_die_count = myDice.max_die_count_for_available_category(
+                    score.get_available_cat_vector())
+
             reward = potential_max_score = score.get_potential_max_score(myDice)
             #
             # if PRINT:
@@ -225,6 +244,33 @@ for episode in range(NUM_EPISODES+1):
                 reward -= 30
 
             potential_max_score_previous = potential_max_score
+
+            # Stuff for encouraging to try straight,full or yum
+            if score.is_category_available('Straight'):
+                if myDice.is_straight():
+                    pass
+                elif almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
+                    # we got further away from straight
+                    reward -= 50
+            if score.is_category_available('Full'):
+                if myDice.is_full():
+                    pass
+                elif almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
+                    # we got further away from full
+                    reward -= 50
+            if score.is_category_available('Yum'):
+                if myDice.is_yum():
+                    pass
+                elif almost_yum_list_per_roll[roll-2] and not almost_yum_list_per_roll[roll-1]:
+                    # we got further away from yum
+                    reward -= 40
+
+            if not score.is_above_the_line_all_scored():  # MDC only if anything left above the line:
+                if max_die_count_previous > max_die_count:
+                    reward += -60
+                elif max_die_count > max_die_count_previous:
+                    reward += 40
+            max_die_count_previous = max_die_count
 
             # REWARD <---
 
@@ -283,6 +329,7 @@ for episode in range(NUM_EPISODES+1):
         print("episode = ", episode)
         print("score = ", score.get_total_score())
         score.print_scorecard()
+        print("epsilon = ", epsilon)
         print("\n")
 
     # Track scoring: how does it evolve over time --->
@@ -300,7 +347,7 @@ for episode in range(NUM_EPISODES+1):
 
     if episode != 0 and episode % NUM_TRACK_SCORE == 0:
         with open("score_track_progress.txt", "a") as f:
-            f.write(f"{episode}\t{track_average_score/NUM_GAMES}")
+            f.write(f"{episode}\t{epsilon}\t{track_average_score/NUM_GAMES}")
             for item in track_score_array:
                 f.write(f"\t{item / NUM_GAMES}")
             f.write("\n")
