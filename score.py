@@ -103,11 +103,8 @@ class Score:
                     if dice.is_yum(): potential_score.append(30)
                 elif category == 'Straight':
                     if dice.is_straight(): potential_score.append(25)
-                    elif dice.is_almost_straight(): potential_score.append(10)  # close to straight
                 elif category == 'Full':
                     if dice.is_full(): potential_score.append(25)
-                    elif dice.is_two_pairs():
-                        potential_score.append(15)  # almost full
                 elif category == 'High' or category == 'Low':
                     potential_score.append(self.compute_score_hi_lo(category, dice))
                 else:  # 1's thru 6's
