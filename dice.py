@@ -231,6 +231,17 @@ class DiceSet:
             if count == 2:  # 2 for the pair
                 return die_face
 
+    def find_face_not_two_pair(self):
+        '''
+        Find the face of the singleton die in the hand
+        intended for use when we know we have two pairs and one singleton
+        :return: the face of the singleton
+        '''
+        self.as_dict()
+        for die_face, count in self._dict.items():
+            if count == 1:  # 12 for the pair
+                return die_face
+
     def is_almost_straight(self):
         '''
         Are we within 1 die of a straight
@@ -285,6 +296,10 @@ class DiceSet:
     def reset_list_reroll(self):
 
         self._list_reroll = [True] * NUM_DICE
+
+    def flip_list_reroll(self):
+
+        self._list_reroll = [not element for element in self._list_reroll]
 
     def make_list_reroll_for_selected_die_face(self, die_face):
 
