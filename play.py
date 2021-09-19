@@ -90,19 +90,30 @@ for game_number in range(NUM_GAMES):
                 action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
                           keep_action_mask_dict[myDice.as_short_string()])).argmax()
 
-                if action == 60:
-                    print(f"action 60 {myDice.as_short_string()} in game {game_number+1}")
-                if PRINT:
-                    print("action = ", action)
+                # Non-table action
+                # Force trying the straight
+                # if score.is_category_available('Straight') and myDice.is_almost_straight():
+                #     action = 60
 
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
 
-                if PRINT:
-                    print(f"dice action {action} has list re-roll {myDice.get_list_reroll()}")
+                # Non-table action
+                # Force trying the Full
+                # almost_full = False
+                # if score.is_category_available('Full') and myDice.is_two_pairs():
+                #     almost_full = True
+                #     singleton = myDice.find_face_not_two_pair()
+                #     myDice.make_list_reroll_for_selected_die_face(singleton)
+                #     myDice.flip_list_reroll()
+
                 myDice.roll_list_reroll()
+
                 if print_record_games:
                     game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
+                    # if almost_full:
+                    # game_events_to_record.append(f" FULL FORCED action {action} has list re-roll {myDice.get_list_reroll()}\n")
+                    # else:
                     game_events_to_record.append(f" action {action} has list re-roll {myDice.get_list_reroll()}\n")
                     game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
 
@@ -139,7 +150,6 @@ for game_number in range(NUM_GAMES):
         yum_counter += 1
     if score.get_category_score('Straight') == 25:
         straight_counter += 1
-        print(f"Straight in game {game_number+1}")
     if score.get_category_score('Full') == 25:
         full_counter += 1
     if score.get_category_score('Low') > 0:
