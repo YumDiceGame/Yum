@@ -2,17 +2,16 @@
 # with Q learning
 
 
-import numpy as np
-from dice import DiceSet
-from score import *
-from constants import *
+import os
 import pickle
 import random
-import os
+import numpy as np
 from numpy import ma
-from do_q_table import do_q_table_rows
+
+from constants import *
 from do_keep_action_q_table import action_q_table
-import time
+from do_q_table import do_q_table_rows
+from score import *
 
 Train = True
 if Train:
@@ -27,7 +26,6 @@ else:
     PRINT = False
 
 Auto_shutdown = False
-
 
 def calc_row_index():
     # We calculate the row index fairly often ...
@@ -99,7 +97,7 @@ myDice = DiceSet()
 score = Score()
 scores = []
 
-# for score tracking -->
+# for score tracking and other -->
 track_score = True
 track_average_score = 0
 track_score_array = np.zeros(6)
@@ -170,18 +168,11 @@ for episode in range(NUM_EPISODES+1):
                                                           keeping_actions_masks[myDice.as_short_string()])
                 masked_random_actions = possible_random_actions[possible_random_actions.mask == False]
                 action = random.choice(masked_random_actions)
-                if PRINT and episode % NUM_SHOW == 0:
-                    print("possible random actions = ", possible_random_actions)
-                    print("masked random actions = ", masked_random_actions)
-                    print("action RANDOM")
-                    print("action = ", action)
             else:
                 # action = (ma.masked_array(q_table_keeping[state_index][0:NUM_KEEPING_ACTIONS],
                 #                           keeping_actions_masks[myDice.as_short_string()])).argmax()
                 action = (ma.masked_array(q_table_keeping[state_index][0:NUM_KEEPING_ACTIONS],
                                           keeping_actions_masks[myDice.as_short_string()])).argmax()
-                if PRINT and episode % NUM_SHOW == 0:
-                    print("action TABLE")
 
             myDice.make_list_reroll_for_selected_die_faces(action_to_dice_to_keep[action])
             myDice.roll_list_reroll()
@@ -216,7 +207,7 @@ for episode in range(NUM_EPISODES+1):
                 max_die_count, face_max_die_count = myDice.max_die_count_for_available_category(
                     score.get_available_cat_vector())
 
-            reward = potential_max_score = score.get_potential_max_score(myDice)
+            potential_max_score = score.get_potential_max_score(myDice)
             #
             # if PRINT:
             #     print(f"roll {myDice.get_num_rolls()} mdc = {max_die_count} fmdc = {face_max_die_count}")
@@ -230,18 +221,29 @@ for episode in range(NUM_EPISODES+1):
             # special_reward = 0
             # if PRINT:
             #     print(f"before mdc check  max_die_count_previous = {max_die_count_previous} max_die_count = {max_die_count} ")
-            if potential_max_score >= 21:  # was 25: made 21 because want the low
-                reward += 90  # this is great
-            elif potential_max_score_previous >= (potential_max_score+25):  # if score went down a lot
-                reward += -90
-            elif reward == 0:  # reward = 0 probably you kept all dice wrongly
-                reward += -60
-            elif reward >= 15:  # could mean 3 out of 5
-                reward += 40
-            elif reward >= 10:  #
-                reward += 20
-            elif 0 <= reward < 10:
-                reward -= 30
+            reward = -1
+            if potential_max_score == 50: # Now valuing dice at 10 per
+                reward = 10  # Max!
+            elif potential_max_score > potential_max_score_previous:
+                reward = 5
+            elif potential_max_score_previous > potential_max_score:
+                reward = -7.5
+            elif potential_max_score_previous == potential_max_score:
+                reward = -5
+            # if potential_max_score >= 30:  # Now valuing dice at 10 per
+            #     reward += 90
+            # elif 21 <= potential_max_score < 30:
+            #     reward += 75
+            # elif potential_max_score_previous >= (potential_max_score+25):  # if score went down a lot
+            #     reward += -100 # -90
+            # elif potential_max_score_previous == potential_max_score == 0:  # we are stalled
+            #     reward += -80
+            # elif potential_max_score == 0:  # reward = 0 probably you kept all dice wrongly
+            #     reward += -60
+            # elif potential_max_score >= 20:  # could mean 3 out of 5
+            #     reward += 40
+            # else:
+            #     reward = 0
 
             potential_max_score_previous = potential_max_score
 
@@ -265,11 +267,11 @@ for episode in range(NUM_EPISODES+1):
                     # we got further away from yum
                     reward -= 40
 
-            if not score.is_above_the_line_all_scored():  # MDC only if anything left above the line:
-                if max_die_count_previous > max_die_count:
-                    reward += -60
-                elif max_die_count > max_die_count_previous:
-                    reward += 40
+            # if not score.is_above_the_line_all_scored():  # MDC only if anything left above the line:
+            #     if max_die_count_previous > max_die_count:
+            #         reward += -60
+            #     elif max_die_count > max_die_count_previous:
+            #         reward += 40
             max_die_count_previous = max_die_count
 
             # REWARD <---
@@ -335,10 +337,17 @@ for episode in range(NUM_EPISODES+1):
     # Track scoring: how does it evolve over time --->
     if (episode+NUM_GAMES) % NUM_TRACK_SCORE == 0:
         track_score = True
+        # we are going to set epsilon to 0 for the eval (table actions only matter)
+        # store the current epsilon
+        epsilon_mem = epsilon
+        print(f"storing epsilon {epsilon_mem} at episode {episode}")
+        epsilon = 0  # -> setting eps to 0 temporarily
         track_average_score = 0
         track_score_array = np.zeros(6)
-    elif episode % NUM_TRACK_SCORE == 0:
+    elif (episode % NUM_TRACK_SCORE == 0) and (episode != 0):
         track_score = False
+        epsilon = epsilon_mem  # restore epsilon to resume training
+        print(f"restoring epsilon {epsilon} at episode {episode}")
     if track_score:
         # accumulation for average score
         track_average_score += score.get_total_score()

@@ -25,8 +25,10 @@ num_show = 1000
 # Exploration settings
 # Epsilon is not a constant, it will be decayed
 # High epsilon means high random action
-START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = NUM_EPISODES / 2
+# START_EPSILON_DECAYING = 1
+# END_EPSILON_DECAYING = NUM_EPISODES / 2
+START_EPSILON_DECAYING = NUM_EPISODES//2
+END_EPSILON_DECAYING = NUM_EPISODES-1
 
 if do_epsilon:
     epsilon = 1
@@ -199,10 +201,11 @@ for episode in range(1, NUM_EPISODES):
 
             # Above the line items
             elif scored_cat in ABOVE_THE_LINE_CATEGORIES:
-                if max_die_count <= 2:  # Right category, but too low score 2 is bad
-                    reward += (-30*face_max_die_count)  # prorate according to face max die count
+                num_dice_scored = int(scored_amount / score_cat_to_int(scored_cat))
+                if num_dice_scored <= 2:  # Right category, but too low score 2 is bad
+                    reward += (-30*score_cat_to_int(scored_cat))  # prorate according to face max die count
                     if 0 < max_die_count <= 1:  # 1 is worse
-                        reward += (-45*face_max_die_count)  # prorate according to face max die count
+                        reward += (-45*score_cat_to_int(scored_cat))  # prorate according to face max die count
                     # because low score in 6's not as bad as low score in 1's
                     # if episode % num_show == 0:
                     #     print(f"low mdc {reward}")

@@ -50,6 +50,7 @@ straight_counter = 0
 full_counter = 0
 lo_counter = 0
 hi_counter = 0
+action_60_counter = 0
 
 all_scored = False
 
@@ -89,11 +90,15 @@ for game_number in range(NUM_GAMES):
                 # Action
                 action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
                           keep_action_mask_dict[myDice.as_short_string()])).argmax()
+                if action == 60:
+                    print("action 60")
+                    action_60_counter += 1
 
                 # Non-table action
                 # Force trying the straight
-                # if score.is_category_available('Straight') and myDice.is_almost_straight():
-                #     action = 60
+                # if score.is_category_available('Straight') and myDice.is_almost_straight() \
+                #         and myDice.is_all_singletons():
+                #    action = 60
 
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
@@ -112,7 +117,7 @@ for game_number in range(NUM_GAMES):
                 if print_record_games:
                     game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
                     # if almost_full:
-                    # game_events_to_record.append(f" FULL FORCED action {action} has list re-roll {myDice.get_list_reroll()}\n")
+                    #   game_events_to_record.append(f" FULL FORCED action {action} has list re-roll {myDice.get_list_reroll()}\n")
                     # else:
                     game_events_to_record.append(f" action {action} has list re-roll {myDice.get_list_reroll()}\n")
                     game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
@@ -157,11 +162,11 @@ for game_number in range(NUM_GAMES):
     if score.get_category_score('High') > 0:
         hi_counter += 1
 
-    game_score = score.get_total_score() + score.get_bonus()
-    print(f"Total score for game {game_number + 1} is {game_score + score.get_bonus()}\n")
+    game_score = score.get_total_score()  # + score.get_bonus()
+    print(f"Total score for game {game_number + 1} is {game_score}\n")
 
     if print_record_games:
-        game_events_to_record.append(f"Total score for game {game_number+1} is {game_score + score.get_bonus()}"
+        game_events_to_record.append(f"Total score for game {game_number+1} is {game_score}"
                                      f" bonus is {score.get_bonus()}\n")
         game_events_to_record.append(f"-----\n")
 
@@ -177,6 +182,7 @@ print(f"straight count = {straight_counter}")
 print(f"full count = {full_counter}")
 print(f"lo count = {lo_counter}")
 print(f"hi count = {hi_counter}")
+print(f"Action 60 happened {action_60_counter} times")
 
 if print_record_games:
     with open("games.txt", "wt") as file_record_games:
