@@ -216,6 +216,10 @@ class DiceSet:
 
         return self._dice == [1, 2, 3, 4, 5] or self._dice == [2, 3, 4, 5, 6]
 
+    def is_all_singletons(self):
+
+        return len(collections.Counter(self._dice)) == NUM_DICE
+
     def is_full(self):
         self.as_dict()
         return (2 in self._dict.values()) and (3 in self._dict.values())

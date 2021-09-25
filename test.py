@@ -8,9 +8,10 @@ myDice = DiceSet()
 myScore = Score()
 
 
-myDice.set([1, 1, 2, 3, 3])
+# myDice.set([1, 1, 2, 3, 3])
 # myDice.set([1, 4, 4, 4, 4])
 # myDice.set([2, 2, 4, 4, 6])
+myDice.set([1, 2, 3, 4, 5])
 print(myDice)
 print(myDice.get_dict())
 
@@ -28,3 +29,9 @@ if myDice.is_two_pairs():
 if myDice.is_almost_yum():
     print("almost yum")
 
+reward = 0
+reward += 30 + 2*10
+print(reward)
+
+
+print(myDice.is_all_singletons())
