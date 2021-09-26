@@ -17,8 +17,8 @@ class Score:
         # 'False' means that category has not been scored, thus it is available
         # For now training only above the line plus Yum and straight
         self._scores = {'Ones': [False, 0], 'Twos': [False, 0], 'Threes': [False, 0], 'Fours': [False, 0],
-                        'Fives': [False, 0], 'Sixes': [False, 0], 'Yum': [True, 0], 'Straight': [True, 0],
-                        'Full': [True, 0], 'Low': [True, 0], 'High': [True, 0]}
+                        'Fives': [False, 0], 'Sixes': [False, 0], 'Yum': [False, 0], 'Straight': [False, 0],
+                        'Full': [False, 0], 'Low': [False, 0], 'High': [False, 0]}
         self._re_score_alert = 0
         return self._scores
 

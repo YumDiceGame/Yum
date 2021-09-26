@@ -162,7 +162,7 @@ for game_number in range(NUM_GAMES):
     if score.get_category_score('High') > 0:
         hi_counter += 1
 
-    game_score = score.get_total_score()  # + score.get_bonus()
+    game_score = score.get_total_score() + score.get_bonus()
     print(f"Total score for game {game_number + 1} is {game_score}\n")
 
     if print_record_games:

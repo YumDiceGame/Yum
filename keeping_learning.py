@@ -39,8 +39,8 @@ def calc_row_index():
 # High epsilon means high random action
 # START_EPSILON_DECAYING = 1
 # END_EPSILON_DECAYING = NUM_EPISODES//2
-START_EPSILON_DECAYING = NUM_EPISODES//2
-END_EPSILON_DECAYING = NUM_EPISODES-1
+START_EPSILON_DECAYING = NUM_EPISODES//4
+END_EPSILON_DECAYING = 3*NUM_EPISODES//4
 
 if do_epsilon:
     epsilon = 1
@@ -224,6 +224,8 @@ for episode in range(NUM_EPISODES+1):
             reward = -1
             if potential_max_score == 50: # Now valuing dice at 10 per
                 reward = 10  # Max!
+            elif 21 <= potential_max_score <= 40:
+                reward = 7.5
             elif potential_max_score > potential_max_score_previous:
                 reward = 5
             elif potential_max_score_previous > potential_max_score:
@@ -248,24 +250,25 @@ for episode in range(NUM_EPISODES+1):
             potential_max_score_previous = potential_max_score
 
             # Stuff for encouraging to try straight,full or yum
-            if score.is_category_available('Straight'):
-                if myDice.is_straight():
-                    pass
-                elif almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
-                    # we got further away from straight
-                    reward -= 50
-            if score.is_category_available('Full'):
-                if myDice.is_full():
-                    pass
-                elif almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
-                    # we got further away from full
-                    reward -= 50
-            if score.is_category_available('Yum'):
-                if myDice.is_yum():
-                    pass
-                elif almost_yum_list_per_roll[roll-2] and not almost_yum_list_per_roll[roll-1]:
-                    # we got further away from yum
-                    reward -= 40
+            # Try removing
+            # if score.is_category_available('Straight'):
+            #     if myDice.is_straight():
+            #         pass
+            #     elif almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
+            #         # we got further away from straight
+            #         reward -= 50
+            # if score.is_category_available('Full'):
+            #     if myDice.is_full():
+            #         pass
+            #     elif almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
+            #         # we got further away from full
+            #         reward -= 50
+            # if score.is_category_available('Yum'):
+            #     if myDice.is_yum():
+            #         pass
+            #     elif almost_yum_list_per_roll[roll-2] and not almost_yum_list_per_roll[roll-1]:
+            #         # we got further away from yum
+            #         reward -= 40
 
             # if not score.is_above_the_line_all_scored():  # MDC only if anything left above the line:
             #     if max_die_count_previous > max_die_count:
@@ -329,7 +332,8 @@ for episode in range(NUM_EPISODES+1):
 
     if episode % NUM_SHOW == 0:
         print("episode = ", episode)
-        print("score = ", score.get_total_score())
+        print("score = ", score.get_total_score() + score.get_bonus())
+        print("bonus = ", score.get_bonus())
         score.print_scorecard()
         print("epsilon = ", epsilon)
         print("\n")
@@ -350,7 +354,7 @@ for episode in range(NUM_EPISODES+1):
         print(f"restoring epsilon {epsilon} at episode {episode}")
     if track_score:
         # accumulation for average score
-        track_average_score += score.get_total_score()
+        track_average_score += (score.get_total_score() + score.get_bonus())
         # accumulation for tracking above the line items such as straight, full...
         track_score_array = np.add(track_score_array, np.array(score.get_above_the_line_success()))
 
