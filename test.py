@@ -6,32 +6,19 @@ import numpy.ma as ma
 myDice = DiceSet()
 
 myScore = Score()
+myScore.reset_scores()
+CompScore = Score()
+CompScore.reset_scores()
 
+my_scorecard_string = myScore.print_scorecard()
+comp_scorecard_string = CompScore.print_scorecard()
+both_scorecards = zip(my_scorecard_string, comp_scorecard_string)
 
-# myDice.set([1, 1, 2, 3, 3])
-# myDice.set([1, 4, 4, 4, 4])
-# myDice.set([2, 2, 4, 4, 6])
-myDice.set([1, 2, 3, 4, 5])
-print(myDice)
-print(myDice.get_dict())
+agent = "Agent"
+print(f"Player{agent.rjust(30)}")
+for line in both_scorecards:
+    print(f"{line[0]}{line[1].rjust(30)}")
 
-
-if myDice.is_almost_straight():
-    print("almost straight")
-if myDice.is_two_pairs():
-    print("almost full")
-    singleton = myDice.find_face_not_two_pair()
-    print("singleton = ", singleton)
-    myDice.make_list_reroll_for_selected_die_face(singleton)
-    print(myDice.get_list_reroll())
-    myDice.flip_list_reroll()
-    print(myDice.get_list_reroll())
-if myDice.is_almost_yum():
-    print("almost yum")
-
-reward = 0
-reward += 30 + 2*10
-print(reward)
-
-
-print(myDice.is_all_singletons())
+print("\n\n")
+for line in my_scorecard_string:
+    print(line)

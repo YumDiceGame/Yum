@@ -246,6 +246,10 @@ class DiceSet:
             if count == 1:  # 12 for the pair
                 return die_face
 
+    def is_almost_full(self):
+
+        return (self.is_two_pairs() or (3 in self._dict.values())) and not self.is_full()
+
     def is_almost_straight(self):
         '''
         Are we within 1 die of a straight

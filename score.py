@@ -79,11 +79,16 @@ class Score:
         return bonus
 
     def print_scorecard(self):
+        # actually creates a string that the caller will have to print
+        scorecard_string = []
         for score_key in self._scores:
             if self._scores[score_key][0] and self._scores[score_key][1] == 0:
-                print(f"{score_key} score X")
+                scorecard_string.append(f"{score_key} score X")
             else:
-                print(f"{score_key} score {self._scores[score_key][1]}")
+                scorecard_string.append(f"{score_key} score {self._scores[score_key][1]}")
+        scorecard_string.append(f"Bonus {self.get_bonus()}")
+        scorecard_string.append(f"Total score {self.get_total_score() + self.get_bonus()}")
+        return scorecard_string
 
     def all_scored(self):
 
