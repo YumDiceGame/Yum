@@ -112,13 +112,16 @@ class action_q_table(DiceSet):
 
         # this is for keeping 4 dice when you're missing
         # only on for a straight
-        k4_action_mask = '0'
-        singletons = list(self.as_set())
-        # check that we are 1 die away from a straight
-        for i in range(len(singletons) - 1):
-            if singletons[i + 1] - singletons[i] > 2:
-                # we are not ... so mask at 1
-                k4_action_mask = '1'
+        k4_action_mask = '1'
+        # Update: use is almost straight
+        if self.is_almost_straight():
+            k4_action_mask = '0'
+        # singletons = list(self.as_set())
+        # # check that we are 1 die away from a straight
+        # for i in range(len(singletons) - 1):
+        #     if singletons[i + 1] - singletons[i] > 2:
+        #         # we are not ... so mask at 1
+        #         k4_action_mask = '1'
 
         return k4_action_mask
 
