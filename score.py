@@ -314,9 +314,7 @@ class Score:
             penalty = 35
         elif scratched_cat == 'Straight' or scratched_cat == 'Twos':
             penalty = 40
-        elif scratched_cat == 'High':
-            penalty = 45
-        elif scratched_cat == 'Full' or scratched_cat == 'Low':
+        elif scratched_cat == 'Full' or scratched_cat == 'Low' or scratched_cat == 'High':
             penalty = 50
         elif scratched_cat == 'Threes' or scratched_cat == 'Fours':
             penalty = 60

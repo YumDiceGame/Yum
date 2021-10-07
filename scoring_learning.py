@@ -1,6 +1,12 @@
 # Training scoring with above the line, Yum, Straight, Full
 # with Q learning
 
+# Last training (which was not bad) on Oct 6:
+# LEARNING_RATE = 0.2
+# DISCOUNT = 0.4
+# NUM_EPISODES = 12_000_000
+# START_EPSILON_DECAYING = 500_000
+# END_EPSILON_DECAYING = NUM_EPISODES-1
 
 from dice import DiceSet
 from score import *
@@ -14,21 +20,13 @@ import time
 
 do_epsilon = True
 Testing_Seq = False
-Use_prior_q_table = True
+Use_prior_q_table = False
 Save_q_table = True
 Auto_shutdown = False
 PRINT = False
 PRINT_L2 = False
-track_diff = True
-num_show = 1000
-
-# Exploration settings
-# Epsilon is not a constant, it will be decayed
-# High epsilon means high random action
-# START_EPSILON_DECAYING = 1
-# END_EPSILON_DECAYING = NUM_EPISODES / 2
-START_EPSILON_DECAYING = NUM_EPISODES//2
-END_EPSILON_DECAYING = NUM_EPISODES-1
+track_diff = False
+num_show = 5000
 
 if do_epsilon:
     epsilon = 1
@@ -100,7 +98,7 @@ for episode in range(1, NUM_EPISODES):
                 myDice.roll_Straight()
             elif episode % 6 == 0:
                 myDice.roll_Full()
-            elif episode % 10 == 0:
+            elif episode % 9 == 0:
                 myDice.roll_Heavy()
         else:
             myDice.roll()
@@ -163,41 +161,30 @@ for episode in range(1, NUM_EPISODES):
 
         if can_yum:
             if scored_cat == 'Yum':
-                reward += 120
+                reward += 200
                 print("===============================================================scored Yum)")
             else:
                 reward += -240
-            if episode % num_show == 0:
-                print(f"Yum check {reward}")
         else:  # anything other than Yum
             # prioritize above the line scoring
-            if max_die_count >= 3 and not can_full:  #
-                if scored_cat != score_int_to_cat(face_max_die_count):
-                    reward -= (90 + 30*face_max_die_count)  # really need to score 3 of a kind above the line!
-                                                            # also pro-rate
-                else:  # max_die_count >= 3:  # Right category, and pretty good score, reward!
-                    reward += 30 * face_max_die_count  # prorate according to face max die count
-                # if episode % num_show == 0:
-                #     print(f"High mdc check {reward}")
-            elif can_straight:
+            if can_straight:
                 if scored_cat == 'Straight':
-                    reward += 100
-                    print("--------------------Scored Straight")
+                    reward += 150
                     print("--------------------Scored Straight")
                 else:
                     reward += -200
-                if episode % num_show == 0:
-                    print(f"Straight check {reward}")
             elif can_full:
                 if scored_cat == 'Full':
                     reward += 150
                     print("--------------------Scored Full")
-                    print("--------------------Scored Full")
                 else:
-                    reward += -200
-                if episode % num_show == 0:
-                    print(f"Full check {reward}")
-                # special_reward = reward
+                    reward += -250
+            elif max_die_count >= 3:  #  and not can_full:  #
+                if scored_cat != score_int_to_cat(face_max_die_count):
+                    reward -= (90 + 30 * face_max_die_count)  # really need to score 3 of a kind above the line!
+                    # also pro-rate
+                else:  # max_die_count >= 3:  # Right category, and pretty good score, reward!
+                    reward += 30 * face_max_die_count  # prorate according to face max die count
 
             # Above the line items
             elif scored_cat in ABOVE_THE_LINE_CATEGORIES:

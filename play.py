@@ -21,7 +21,7 @@ PRINT = False
 with open("q_table_scoring.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
-with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
+with open("q_table_keeping_50M.pickle", "rb") as keeping_q_table_file:
     q_table_keeping = pickle.load(keeping_q_table_file)
 
 # Create q_table_scoring_rows
@@ -51,6 +51,7 @@ full_counter = 0
 lo_counter = 0
 hi_counter = 0
 action_60_counter = 0
+forced_action_60_counter = 0
 
 all_scored = False
 
@@ -96,21 +97,14 @@ for game_number in range(NUM_GAMES):
 
                 # Non-table action
                 # Force trying the straight
-                # if score.is_category_available('Straight') and myDice.is_almost_straight() \
-                #         and myDice.is_all_singletons():
-                #    action = 60
+                # if score.is_category_available('Straight') and myDice.is_all_singletons() and action != 60:
+                # #         and myDice.is_all_singletons():  myDice.is_almost_straight()
+                #     action = 60
+                #     print("forced action 60")
+                #     forced_action_60_counter += 1
 
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
-
-                # Non-table action
-                # Force trying the Full
-                # almost_full = False
-                # if score.is_category_available('Full') and myDice.is_two_pairs():
-                #     almost_full = True
-                #     singleton = myDice.find_face_not_two_pair()
-                #     myDice.make_list_reroll_for_selected_die_face(singleton)
-                #     myDice.flip_list_reroll()
 
                 myDice.roll_list_reroll()
 
@@ -182,7 +176,8 @@ print(f"straight count = {straight_counter}")
 print(f"full count = {full_counter}")
 print(f"lo count = {lo_counter}")
 print(f"hi count = {hi_counter}")
-print(f"Action 60 happened {action_60_counter} times")
+print(f"table action 60 happened {action_60_counter} times")
+print(f"forced action 60 happened {forced_action_60_counter} times")
 
 if print_record_games:
     with open("games.txt", "wt") as file_record_games:
