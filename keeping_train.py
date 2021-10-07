@@ -160,7 +160,6 @@ class KeepingTrain:
                     # if PRINT:
                     #     print(f"before mdc check  max_die_count_previous = {max_die_count_previous} max_die_count = {max_die_count} ")
                     reward = -1
-
                     # not bad, but need better
                     if potential_max_score == 50: # Now valuing dice at 10 per
                         reward = 10  # Max!
