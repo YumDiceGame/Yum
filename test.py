@@ -1,6 +1,7 @@
 from dice import *
 from score import *
 from do_keep_action_q_table import *
+from do_q_table import do_q_table_rows
 import numpy as np
 import numpy.ma as ma
 myDice = DiceSet()
@@ -22,3 +23,7 @@ for line in both_scorecards:
 print("\n\n")
 for line in my_scorecard_string:
     print(line)
+
+myDice.roll_Yum()
+print(myDice.is_yum())
+print(myDice.as_dict())
