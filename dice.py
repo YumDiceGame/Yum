@@ -54,20 +54,9 @@ class DiceSet:
         self._num_rolls += 1
         self.as_dict()  # So caller doesn't need to worry
 
-    def roll_Yum(self, indices=None):
+    def roll_Yum(self):
         # roll random Yum
-
-        if indices is None:
-            indices = [True] * NUM_DICE # range(self._num_dice)
-
-        j = 0
-        for i in indices:
-            if (i == True) or (self._dice[j] is None):
-                self._dice[j] = np.random.randint(1, NUM_DIE_FACES+1) # random.randint(1, 6)
-            j += 1
-
-        self._dice = sorted(self._dice)
-        self._num_rolls += 1
+        self._dice = [np.random.randint(1, NUM_DIE_FACES+1)] * NUM_DICE
         self.as_dict()  # So caller doesn't need to worry
 
     def roll_Straight(self):

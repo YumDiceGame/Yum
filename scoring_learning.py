@@ -8,6 +8,9 @@
 # START_EPSILON_DECAYING = 500_000
 # END_EPSILON_DECAYING = NUM_EPISODES-1
 
+# Redoing it as above except NUM_EPISODES = 15_000_000
+# Reason: my roll_Yum wasn't working !!
+
 from dice import DiceSet
 from score import *
 from constants import *
@@ -22,7 +25,7 @@ do_epsilon = True
 Testing_Seq = False
 Use_prior_q_table = False
 Save_q_table = True
-Auto_shutdown = False
+Auto_shutdown = True
 PRINT = False
 PRINT_L2 = False
 track_diff = False
@@ -143,18 +146,16 @@ for episode in range(1, NUM_EPISODES):
         if not score.is_above_the_line_all_scored():
             max_die_count, face_max_die_count = myDice.max_die_count_for_available_category(score.get_available_cat_vector())
 
-        # Score category
-        scored_cat = score_int_to_cat(action + 1)
-        score.score_a_category(scored_cat, myDice)
-        scored_amount = score.get_category_score(scored_cat)
-
         # shorthand defs:
+        # Have to do this before scoring !!
         can_yum = myDice.is_yum() and score.is_category_available('Yum')
         can_full = myDice.is_full() and score.is_category_available('Full')
         can_straight = myDice.is_straight() and score.is_category_available('Straight')
 
-        # if episode % num_show == 0:
-        #     print(f"dice = {myDice} scored cat = {scored_cat} scored amount = {scored_amount}")
+        # Score category
+        scored_cat = score_int_to_cat(action + 1)
+        score.score_a_category(scored_cat, myDice)
+        scored_amount = score.get_category_score(scored_cat)
 
         # Reward
         reward = 0
@@ -162,7 +163,6 @@ for episode in range(1, NUM_EPISODES):
         if can_yum:
             if scored_cat == 'Yum':
                 reward += 200
-                print("===============================================================scored Yum)")
             else:
                 reward += -240
         else:  # anything other than Yum
@@ -170,13 +170,11 @@ for episode in range(1, NUM_EPISODES):
             if can_straight:
                 if scored_cat == 'Straight':
                     reward += 150
-                    print("--------------------Scored Straight")
                 else:
                     reward += -200
             elif can_full:
                 if scored_cat == 'Full':
                     reward += 150
-                    print("--------------------Scored Full")
                 else:
                     reward += -250
             elif max_die_count >= 3:  #  and not can_full:  #

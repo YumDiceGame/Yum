@@ -70,6 +70,9 @@ for game_number in range(NUM_GAMES):
 
         turn += 1
         myDice.reset()
+        # if turn == 1:
+        #     myDice.roll_Yum()
+        # else:
         myDice.roll()
 
         if PRINT:
