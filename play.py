@@ -180,7 +180,6 @@ print(f"full count = {full_counter}")
 print(f"lo count = {lo_counter}")
 print(f"hi count = {hi_counter}")
 print(f"table action 60 happened {action_60_counter} times")
-print(f"forced action 60 happened {forced_action_60_counter} times")
 
 if print_record_games:
     with open("games.txt", "wt") as file_record_games:

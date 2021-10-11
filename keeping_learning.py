@@ -18,7 +18,7 @@ Train = True
 if Train:
     do_epsilon = True
     Use_prior_q_table = False
-    Save_q_table = False
+    Save_q_table = True
     PRINT = False
 else:
     do_epsilon = True
@@ -74,8 +74,10 @@ track_score_array = np.zeros(6)
 
 keeping_train = KeepingTrain()
 
-discounts = learning_rates = list(range(20, 100, 20))
-# LR=0.2 and DIS=0.4 seems the "best"
+learning_rates = [20]  # list(range(20, 80, 20))
+discounts = [80]  # list(range(40, 100, 20))
+# LR of 0.8 seems that it's not good
+# LR 0.2 DIS 0.8 seems promising
 
 for learning_rate in learning_rates:
     for discount in discounts:

@@ -71,33 +71,13 @@ class KeepingTrain:
 
                 for roll in range(2, NUM_ROLLS + 1):
 
-                    # This is the observation part of the state
-                    # old style when we were doing only max die count
-                    # max_die_count = face_max_die_count = 0
-                    # state_max_die_count_and_face = myDice.max_die_count_for_available_category(score.get_available_cat_vector())
-                    # state_max_die_count = state_max_die_count_and_face[0]
-                    # state_face_max_die_count = state_max_die_count_and_face[1]
-                    # max_die_count_alert = False
-                    # if PRINT:
-                    #     print("state_max_die_count = ", state_max_die_count)
-                    #     print("state_face_max_die_count = ", state_face_max_die_count)
-                    # if print_record_games:
-                    #     game_events_to_record.append(f"state_max_die_count = {state_max_die_count} state_face_max_die_count = {state_face_max_die_count}")
 
                     # STATE DEFINITION --->
                     # The state now is a concatenation of the dice dict and scored cats
-                    # state = myDice.dice() + score.get_available_cat_vector()
-                    # Get q_table_row number as "state_index"
-                    # segmented lookup
-                    # state_index_dice_roll = list_all_dice_rolls.index(self.dice.dice())
-                    # state_index_score = list_scoreable_categories.index(self.score.get_available_cat_vector())
-                    # state_index = state_index_dice_roll * TWO_TO_NUM_SCORE_CATEGORIES + state_index_score
 
                     state_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
                                                  list_all_dice_rolls, list_scoreable_categories)
 
-                    if self.print:
-                        print("state_index = ", state_index)
                     # STATE DEFINITION <---
 
                     # KEEPING ACTION --->
@@ -147,28 +127,21 @@ class KeepingTrain:
 
                     potential_max_score = self.score.get_potential_max_score(self.dice)
                     #
-                    # if PRINT:
-                    #     print(f"roll {myDice.get_num_rolls()} mdc = {max_die_count} fmdc = {face_max_die_count}")
-                    # shortcut for the reward:
-                    # right now it's max_die_count * face_max_die_count
-                    # but that will have to be generalized as explained at the top of this comment section
-                    # Experiment: normalize to max die count times, say, 3
-                    # reward = max_die_count * face_max_die_count
-                    # reward = max_die_count * 3 # face_max_die_count
-                    # so as before, if max die count went down ...
-                    # special_reward = 0
-                    # if PRINT:
-                    #     print(f"before mdc check  max_die_count_previous = {max_die_count_previous} max_die_count = {max_die_count} ")
                     reward = -1
-                    # not bad, but need better
+
                     if potential_max_score == 50: # Now valuing dice at 10 per
-                        reward = 10  # Max!
-                    elif 21 <= potential_max_score <= 40:
+                        reward = 15  # Max!
+                    elif 40 <= potential_max_score < 50:
+                        reward = 10
+                    elif 21 <= potential_max_score <= 30:
                         reward = 7.5
                     elif potential_max_score > potential_max_score_previous:
                         reward = 5
                     elif potential_max_score_previous > potential_max_score:
-                        reward = -10
+                        if potential_max_score_previous >= (potential_max_score+25):
+                            reward = -20  # You abandoned the straight probably
+                        else:
+                            reward = -10
                     elif potential_max_score_previous == potential_max_score:
                         reward = -5
 
@@ -204,11 +177,6 @@ class KeepingTrain:
                     #         # we got further away from yum
                     #         reward -= 40
 
-                    # if not score.is_above_the_line_all_scored():  # MDC only if anything left above the line:
-                    #     if max_die_count_previous > max_die_count:
-                    #         reward += -60
-                    #     elif max_die_count > max_die_count_previous:
-                    #         reward += 40
 
                     potential_max_score_previous = potential_max_score
                     max_die_count_previous = max_die_count
@@ -219,48 +187,40 @@ class KeepingTrain:
                     # nothing special, we'll just get the new state as always
                     # new_state = myDice.get_dict_as_vector() + score.get_available_cat_vector()
                     # get q_table_row number as "state_index"
-                    # new_state_index_dice = list_all_dice_rolls.index(myDice.dice())
-                    # new_state_index_score = list_scoreable_categories.index(self.score.get_available_cat_vector())
-                    # new_state_index = new_state_index_dice * TWO_TO_NUM_SCORE_CATEGORIES + new_state_index_score
                     new_state_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
                                                      list_all_dice_rolls, list_scoreable_categories)
 
-                    # if PRINT:
-                    #     print("new_state_index_dice = ", new_state_index_dice)
-                    #     print("new_state_index_score = ", new_state_index_score)
-                    #     print("new_state_index = ", new_state_index)
-                    # NEW STATE <---
+                    # SCORE CATEGORY --->
+                    # Moved to here so as to get some feedback for the learning
+                    # Scoring with previously trained score q table
+                    if roll == NUM_ROLLS:  # Last roll
+                        # q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
+                        #                                        list_all_dice_rolls, list_scoreable_categories)
+                        category_scored = self.score.score_with_q_table(q_table_scoring, new_state_index, self.dice)
+                        if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
+                            # penalty for anything less than 5 of a kind
+                            penalty = 5 * (NUM_DICE - (self.score.get_category_score(score_int_to_cat(category_scored)) / category_scored))
+                            reward -= penalty
+                    # SCORE CATEGORY <---
 
                     # Q UPDATE --->
                     # should be similar to:
                     max_future_q = np.max(q_table_keeping[new_state_index][action])
-                    # if PRINT:
-                    #     print("max future q = ", max_future_q)
-                    #
-                    # # Current Q value (for current state and performed action)
+
                     current_q = q_table_keeping[state_index][action]
-                    # if PRINT:
-                    #     print("current q = ", current_q)
-                    #
-                    # # And here's our equation for a new Q value for current state and dice_action
+
                     new_q = (1 - learning_rate) * current_q + learning_rate * (reward + discount * max_future_q)
                     #
                     # # Update Q table with new Q value
                     q_table_keeping[state_index][action] = new_q
-                    # if PRINT:
-                    #     print("new_q = ", q_table_keeping[state_index][action])
 
-                    # print(f"Episode {episode} Turn {turn} roll {roll}time roll {time.time() - time_start_roll}")
 
                 # SCORE CATEGORY --->
                 # Scoring with previously trained score q table
                 # need to compute q_table_score index
-                # q_table_scoring_index_dice = list_all_dice_rolls.index(myDice.dice())
-                # q_table_scoring_index_score = list_scoreable_categories.index(score.get_available_cat_vector())
-                # q_table_scoring_index = q_table_scoring_index_dice * TWO_TO_NUM_SCORE_CATEGORIES + q_table_scoring_index_score
-                q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
-                                                       list_all_dice_rolls, list_scoreable_categories)
-                category_scored = self.score.score_with_q_table(q_table_scoring, q_table_scoring_index, self.dice)
+                # q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
+                #                                        list_all_dice_rolls, list_scoreable_categories)
+                # category_scored = self.score.score_with_q_table(q_table_scoring, q_table_scoring_index, self.dice)
 
                 # SCORE CATEGORY <---
 
@@ -273,8 +233,6 @@ class KeepingTrain:
 
             if episode % NUM_SHOW == 0:
                 print(f"episode = {episode} LR = {learning_rate} DIS = {discount}")
-                print("score = ", self.score.get_total_score() + self.score.get_bonus())
-                print("bonus = ", self.score.get_bonus())
                 scorecard_string = self.score.print_scorecard()
                 for score_line in scorecard_string:
                     print(score_line)
