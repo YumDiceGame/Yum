@@ -74,10 +74,10 @@ track_score_array = np.zeros(6)
 
 keeping_train = KeepingTrain()
 
-learning_rates = [20]  # list(range(20, 80, 20))
-discounts = [80]  # list(range(40, 100, 20))
-# LR of 0.8 seems that it's not good
-# LR 0.2 DIS 0.8 seems promising
+learning_rates = [30]  # was 20 for Oct 10 training  20
+discounts = [80]  # was 80 for Oct 10 training  50
+
+# Last training 5M LR 0.2 DIS 0.8 went well
 
 for learning_rate in learning_rates:
     for discount in discounts:

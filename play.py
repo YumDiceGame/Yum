@@ -21,7 +21,7 @@ PRINT = False
 with open("q_table_scoring.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
-with open("q_table_keeping_50M.pickle", "rb") as keeping_q_table_file:
+with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
     q_table_keeping = pickle.load(keeping_q_table_file)
 
 # Create q_table_scoring_rows

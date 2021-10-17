@@ -100,26 +100,30 @@ class Score:
 
     def get_potential_max_score(self, dice):
         # given avail categories, what is the best we can get
-        potential_score = [0]
+        potential_score = []  #  (None, 0)  # Tuple: category and score
         for category in self._scores:
             # if not self._scores[category][0]:  # Category available
             if self.is_category_available(category):  # Category available
                 if category == 'Yum':
-                    if dice.is_yum(): potential_score.append(30)
+                    if dice.is_yum():
+                        potential_score.append(('Yum', 30))
+                    else:
+                        potential_score.append(('Yum', 0))
                 elif category == 'Straight':
-                    if dice.is_straight(): potential_score.append(25)
+                    if dice.is_straight():
+                        potential_score.append(('Straight', 25))
+                    else:
+                        potential_score.append(('Straight', 0))
                 elif category == 'Full':
-                    if dice.is_full(): potential_score.append(25)
+                    if dice.is_full():
+                        potential_score.append(('Full', 25))
+                    else:
+                        potential_score.append(('Full', 0))
                 elif category == 'High' or category == 'Low':
-                    potential_score.append(self.compute_score_hi_lo(category, dice))
+                    potential_score.append((category, self.compute_score_hi_lo(category, dice)))
                 else:  # 1's thru 6's
-                    # commented out below the plain score
-                    # potential_score.append(score_cat_to_int(category) * dice.get_dict()[str(score_cat_to_int(category))])
-                    # we want to a bit normalize wrt dice usage for the above the line categories
-                    # boost it a bit -> 6x instead of 5x
-                    potential_score.append(10 * dice.get_dict()[str(score_cat_to_int(category))])
-        # print("pot max = ", max(potential_score))
-        return max(potential_score)
+                    potential_score.append((category, 7 * dice.get_dict()[str(score_cat_to_int(category))]))
+        return max(potential_score, key=lambda x: x[1])  # second element
 
     def assess_lo_hi_score(self, score_amount, category_scored):
         '''
