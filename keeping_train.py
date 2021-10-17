@@ -54,9 +54,9 @@ class KeepingTrain:
                 self.dice.reset()
                 self.dice.roll()
                 # max_die_count: it's back
-                if not self.score.is_above_the_line_all_scored():
-                    max_die_count_previous, face_max_die_count = self.dice.max_die_count_for_available_category(
-                        self.score.get_available_cat_vector())
+                # if not self.score.is_above_the_line_all_scored():
+                #     max_die_count_previous, face_max_die_count = self.dice.max_die_count_for_available_category(
+                #         self.score.get_available_cat_vector())
 
                 # for tracking when you have almost straight, full or yum
                 almost_straight_list_per_roll = []
@@ -67,7 +67,9 @@ class KeepingTrain:
                 almost_full_list_per_roll.append(self.dice.is_almost_full())
                 almost_yum_list_per_roll.append(self.dice.is_almost_yum())
 
-                potential_max_score_previous = self.score.get_potential_max_score(self.dice)
+                # potential_max_score_previous_category = \
+                #     (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_CAT_IND]
+                potential_max_score_previous = (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_IND]
 
                 for roll in range(2, NUM_ROLLS + 1):
 
@@ -121,54 +123,41 @@ class KeepingTrain:
                     # if the potential max score went up there is a reward, and a large one if it went up by 20 or more
                     # So we need a function that will return potential max score
 
-                    if not self.score.is_above_the_line_all_scored():
-                        max_die_count, face_max_die_count = self.dice.max_die_count_for_available_category(
-                            self.score.get_available_cat_vector())
+                    # if not self.score.is_above_the_line_all_scored():
+                    #     max_die_count, face_max_die_count = self.dice.max_die_count_for_available_category(
+                    #         self.score.get_available_cat_vector())
 
-                    potential_max_score = self.score.get_potential_max_score(self.dice)
+                    potential_max_score_category = (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_CAT_IND]
+                    potential_max_score = (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_IND]
+                    if episode % NUM_SHOW == 0 and turn == 4:
+                        self.score.print_available_cats()
+                        print(f"{self.dice} --- {potential_max_score} --- {potential_max_score_category}")
                     #
-                    reward = -1
+                    reward = -5
 
-                    if potential_max_score == 50: # Now valuing dice at 10 per
-                        reward = 15  # Max!
-                    elif 40 <= potential_max_score < 50:
-                        reward = 10
-                    elif 21 <= potential_max_score <= 30:
-                        reward = 7.5
-                    elif potential_max_score > potential_max_score_previous:
-                        reward = 5
+                    if potential_max_score > 0:
+                        if potential_max_score_category in BELOW_THE_LINE_CATEGORIES:
+                            reward += potential_max_score
+                        else:
+                            reward += (1.1 * potential_max_score) # Above the line
+
+                    if potential_max_score > potential_max_score_previous:
+                        reward += 15
                     elif potential_max_score_previous > potential_max_score:
                         if potential_max_score_previous >= (potential_max_score+25):
-                            reward = -20  # You abandoned the straight probably
+                            reward = -30  # You abandoned the straight probably
                         else:
                             reward = -10
-                    elif potential_max_score_previous == potential_max_score:
-                        reward = -5
-
-                    # if potential_max_score >= 30:  # Now valuing dice at 10 per
-                    #     reward += 90
-                    # elif 21 <= potential_max_score < 30:
-                    #     reward += 75
-                    # elif potential_max_score_previous >= (potential_max_score+25):  # if score went down a lot
-                    #     reward += -100 # -90
-                    # elif potential_max_score_previous == potential_max_score == 0:  # we are stalled
-                    #     reward += -80
-                    # elif potential_max_score == 0:  # reward = 0 probably you kept all dice wrongly
-                    #     reward += -60
-                    # elif potential_max_score >= 20:  # could mean 3 out of 5
-                    #     reward += 40
-                    # else:
-                    #     reward = 0
 
                     # Stuff for encouraging to try straight or full
-                    if self.score.is_category_available('Straight') and not self.dice.is_straight() and potential_max_score < 21:
-                        if almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
-                            # we got further away from straight
-                            reward += -10  # += to hedge your bets was -2.5
-                    if self.score.is_category_available('Full') and not self.dice.is_full() and potential_max_score < 21:
-                        if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
-                            # we got further away from full
-                            reward += -15  # += to hedge your bets was -3.5
+                    # if self.score.is_category_available('Straight') and not self.dice.is_straight():  # and potential_max_score < 21:
+                    #     if almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
+                    #         # we got further away from straight
+                    #         reward += -10
+                    # if self.score.is_category_available('Full') and not self.dice.is_full():  # and potential_max_score < 21:
+                    #     if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
+                    #         # we got further away from full
+                    #         reward += -15
 
                     # if score.is_category_available('Yum'):
                     #     if myDice.is_yum():
@@ -177,9 +166,7 @@ class KeepingTrain:
                     #         # we got further away from yum
                     #         reward -= 40
 
-
                     potential_max_score_previous = potential_max_score
-                    max_die_count_previous = max_die_count
 
                     # REWARD <---
 
@@ -194,8 +181,6 @@ class KeepingTrain:
                     # Moved to here so as to get some feedback for the learning
                     # Scoring with previously trained score q table
                     if roll == NUM_ROLLS:  # Last roll
-                        # q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
-                        #                                        list_all_dice_rolls, list_scoreable_categories)
                         category_scored = self.score.score_with_q_table(q_table_scoring, new_state_index, self.dice)
                         if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
                             # penalty for anything less than 5 of a kind
