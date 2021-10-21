@@ -11,6 +11,12 @@ myScore.reset_scores()
 CompScore = Score()
 CompScore.reset_scores()
 
+# Action q table:
+action_table = action_q_table()
+
+# Map action to dice to keep and action masks
+list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_table()
+
 # my_scorecard_string = myScore.print_scorecard()
 # comp_scorecard_string = CompScore.print_scorecard()
 # both_scorecards = zip(my_scorecard_string, comp_scorecard_string)
@@ -27,7 +33,9 @@ CompScore.reset_scores()
 # myDice.roll_Yum()
 # print(myDice.is_yum())
 
+action = 17
+myDice.set([3, 3, 3, 5, 5])
+myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
+myDice.get_list_reroll()
 
-myDice.set([4, 4, 6, 6, 6])
-print(myDice.as_dict())
-print(myScore.get_potential_max_score(myDice))
+print(myDice.get_list_reroll())
