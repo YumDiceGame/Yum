@@ -26,14 +26,10 @@ else:
     Save_q_table = False
     PRINT = False
 
-Auto_shutdown = False
+Auto_shutdown = True
 
 
-# Load q-tables:
-# "q_table_2d_yum.pickle" for the dice keeping actions
-# with open("q_table_2d_yum.pickle", "rb") as f:
-#     q_table = pickle.load(f)
-# And "" for the scoring actions
+# Load scoring q-table:
 with open("q_table_scoring.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
@@ -74,10 +70,10 @@ track_score_array = np.zeros(6)
 
 keeping_train = KeepingTrain()
 
-learning_rates = [30]  # was 20 for Oct 10 training  20
-discounts = [80]  # was 80 for Oct 10 training  50
+learning_rates = [30]
+discounts = [80]
 
-# Last training 5M LR 0.2 DIS 0.8 went well
+# Last training 5M LR 0.3 DIS 0.8 went well (Oct 17, the one with the good action 60 result)
 
 for learning_rate in learning_rates:
     for discount in discounts:

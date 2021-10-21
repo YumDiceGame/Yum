@@ -14,6 +14,12 @@ def calc_row_index(dice, available_categories, list_all_dice_rolls, list_scoreab
     row_index = index_dice * TWO_TO_NUM_SCORE_CATEGORIES + index_score
     return row_index
 
+def print_at_interval(episode, turn, *args):
+    if (episode % NUM_SHOW == 0) and turn == 4:
+        string_to_print = []
+        for item in args:
+            string_to_print.append(item)
+        print(string_to_print)
 
 class KeepingTrain:
 
@@ -53,6 +59,9 @@ class KeepingTrain:
                 turn += 1
                 self.dice.reset()
                 self.dice.roll()
+                if episode % NUM_SHOW == 0 and turn == 4:
+                    self.score.print_available_cats()
+                    print("initial roll = ", self.dice)
                 # max_die_count: it's back
                 # if not self.score.is_above_the_line_all_scored():
                 #     max_die_count_previous, face_max_die_count = self.dice.max_die_count_for_available_category(
@@ -67,9 +76,11 @@ class KeepingTrain:
                 almost_full_list_per_roll.append(self.dice.is_almost_full())
                 almost_yum_list_per_roll.append(self.dice.is_almost_yum())
 
-                # potential_max_score_previous_category = \
-                #     (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_CAT_IND]
+                potential_max_score_previous_category = \
+                    (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_CAT_IND]
                 potential_max_score_previous = (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_IND]
+                if episode % NUM_SHOW == 0 and turn == 4:
+                    print(f"INITIAL {potential_max_score_previous} --- {potential_max_score_previous_category}")
 
                 for roll in range(2, NUM_ROLLS + 1):
 
@@ -101,59 +112,57 @@ class KeepingTrain:
                     almost_full_list_per_roll.append(self.dice.is_almost_full())
                     almost_yum_list_per_roll.append(self.dice.is_almost_yum())
 
-                    if self.print and episode % NUM_SHOW == 0:
-                        print(f"action mask = {keeping_actions_masks[self.dice.as_short_string()]}")
-                        print(
-                            f"roll {self.dice.get_num_rolls()} action {action} list re-roll {self.dice.get_list_reroll()}"
-                            f" new dice {self.dice} ")
 
                     # KEEPING ACTION <---
-
-                    # REWARD --->
-                    # so here we are going to find out what would be the max potential score across available categories
-                    # if we were to score this roll right now.
-                    # We will record this quantity as some trailing max potential score
-                    #
-                    # If initial roll, the reward is whatever that potential max score is
-                    # In subsequent rolls, it gets more interesting:
-                    # is the potential max score went down, there is a penalty
-                    # if it went down by 20 or more, there is a large penalty
-                    # if it's stayed the same, a small reward.
-                    #   But if the potential max score was large and it stayed large, then we give a large reward
-                    # if the potential max score went up there is a reward, and a large one if it went up by 20 or more
-                    # So we need a function that will return potential max score
-
-                    # if not self.score.is_above_the_line_all_scored():
-                    #     max_die_count, face_max_die_count = self.dice.max_die_count_for_available_category(
-                    #         self.score.get_available_cat_vector())
 
                     potential_max_score_category = (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_CAT_IND]
                     potential_max_score = (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_IND]
                     if episode % NUM_SHOW == 0 and turn == 4:
-                        self.score.print_available_cats()
-                        print(f"{self.dice} --- {potential_max_score} --- {potential_max_score_category}")
+                        print(f"{potential_max_score} --- {potential_max_score_category} --- {self.dice} ")
                     #
-                    reward = -5
+                    reward = 0
 
-                    if potential_max_score > 0:
-                        if potential_max_score_category in BELOW_THE_LINE_CATEGORIES:
-                            reward += potential_max_score
-                        else:
-                            reward += (1.1 * potential_max_score) # Above the line
-
-                    if potential_max_score > potential_max_score_previous:
-                        reward += 15
-                    elif potential_max_score_previous > potential_max_score:
+                    if potential_max_score_previous > potential_max_score:
                         if potential_max_score_previous >= (potential_max_score+25):
                             reward = -30  # You abandoned the straight probably
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"big decrease pun = {reward}")
                         else:
-                            reward = -10
+                            reward = potential_max_score - potential_max_score_previous
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"decrease pun = {reward}")
+
+                    if potential_max_score > potential_max_score_previous:
+                        if (potential_max_score_category and potential_max_score_previous_category) \
+                                in BELOW_THE_LINE_CATEGORIES:
+                            reward += potential_max_score
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"below line reward = {reward}")
+
+                    if (potential_max_score_category and potential_max_score_previous_category) in ABOVE_THE_LINE_CATEGORIES:
+                        reward += potential_max_score
+                        if episode % NUM_SHOW == 0 and turn == 4:
+                            print(f"above line reward = {reward}")
+                        if potential_max_score_previous == potential_max_score:
+                            reward += -15  # like mdc stagnation
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"mdc stagnation = {reward}")
+                        if potential_max_score_category == potential_max_score_previous_category:
+                            if potential_max_score_previous > potential_max_score:
+                                reward += -50  # like mdc decrease
+                                if episode % NUM_SHOW == 0 and turn == 4:
+                                    print(f"mdc decease = {reward}")
+
+
+
 
                     # Stuff for encouraging to try straight or full
-                    # if self.score.is_category_available('Straight') and not self.dice.is_straight():  # and potential_max_score < 21:
-                    #     if almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
-                    #         # we got further away from straight
-                    #         reward += -10
+                    if self.score.is_category_available('Straight') and not self.dice.is_straight():  # and potential_max_score < 21:
+                        if almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
+                            # we got further away from straight
+                            reward += -10
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"straight pun = {reward}")
                     # if self.score.is_category_available('Full') and not self.dice.is_full():  # and potential_max_score < 21:
                     #     if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
                     #         # we got further away from full
@@ -167,6 +176,9 @@ class KeepingTrain:
                     #         reward -= 40
 
                     potential_max_score_previous = potential_max_score
+                    potential_max_score_previous_category = potential_max_score_category
+
+                    #
 
                     # REWARD <---
 
@@ -182,10 +194,12 @@ class KeepingTrain:
                     # Scoring with previously trained score q table
                     if roll == NUM_ROLLS:  # Last roll
                         category_scored = self.score.score_with_q_table(q_table_scoring, new_state_index, self.dice)
-                        if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
-                            # penalty for anything less than 5 of a kind
-                            penalty = 5 * (NUM_DICE - (self.score.get_category_score(score_int_to_cat(category_scored)) / category_scored))
-                            reward -= penalty
+
+                        # Hopefully I captured the following above
+                        # if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
+                        #     # penalty for anything less than 5 of a kind
+                        #     penalty = 5 * (NUM_DICE - (self.score.get_category_score(score_int_to_cat(category_scored)) / category_scored))
+                        #     reward -= penalty
                     # SCORE CATEGORY <---
 
                     # Q UPDATE --->

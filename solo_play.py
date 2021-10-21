@@ -17,11 +17,21 @@ PRINT = False
 with open("q_table_scoring.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
+# Also the keeping
+with open("q_table_keeping_LR=0.3_DIS=0.8_5M_action_60_better.pickle", "rb") as keep_q_table_file:
+    q_table_keeping = pickle.load(keep_q_table_file)
+
 # This is to get the q table rows, needed for scoring q table
 # Create q_table_scoring_rows
 q_table_scoring_rows, list_of_die_face_counts, list_scoreable_categories = do_q_table_rows()
 ref_action_table = action_q_table()
 list_all_dice_rolls = ref_action_table.do_list_of_dice_rolls()
+
+# Action q table:
+action_table = action_q_table()
+
+# Map action to dice to keep and action masks
+list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_table()
 
 myDice = DiceSet()
 
@@ -47,7 +57,18 @@ while not all_scored:
     print(myDice)
 
     for roll in range(1, NUM_ROLLS):
-    # ask for list reroll
+
+        # What would agent do
+        q_table_keeping_index_dice = list_all_dice_rolls.index(myDice.dice())
+        q_table_keeping_index_score = list_scoreable_categories.index(agent_score.get_available_cat_vector())
+        q_table_keeping_index = q_table_keeping_index_dice * TWO_TO_NUM_SCORE_CATEGORIES + q_table_keeping_index_score
+        action = (ma.masked_array(q_table_keeping[q_table_keeping_index][0:NUM_KEEPING_ACTIONS],
+                                  keep_action_mask_dict[myDice.as_short_string()])).argmax()
+        print(f"agent would keep {list_set_keep_actions[action]} row {q_table_keeping_index}")
+        if action == 60:
+            print("action 60")
+
+        # ask for list reroll
         input_valid = False
         while not input_valid:
             list_reroll_string = input("Enter dice to keep (r for reroll, k for keep) --> ")

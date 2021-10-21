@@ -45,13 +45,12 @@ score = Score()
 scores = []
 bonus_cnt = 0
 yum_counter = 0
-yum_counter = 0
 straight_counter = 0
 full_counter = 0
 lo_counter = 0
 hi_counter = 0
 action_60_counter = 0
-forced_action_60_counter = 0
+empty_set = set()
 
 all_scored = False
 
@@ -98,25 +97,22 @@ for game_number in range(NUM_GAMES):
                     print("action 60")
                     action_60_counter += 1
 
-                # Non-table action
-                # Force trying the straight
-                # if score.is_category_available('Straight') and myDice.is_all_singletons() and action != 60:
-                # #         and myDice.is_all_singletons():  myDice.is_almost_straight()
-                #     action = 60
-                #     print("forced action 60")
-                #     forced_action_60_counter += 1
-
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
 
+                dice_set_before_reroll = myDice.as_set()  # for knowing if it's Keep All action
                 myDice.roll_list_reroll()
 
                 if print_record_games:
                     game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
-                    # if almost_full:
-                    #   game_events_to_record.append(f" FULL FORCED action {action} has list re-roll {myDice.get_list_reroll()}\n")
-                    # else:
-                    game_events_to_record.append(f" action {action} has list re-roll {myDice.get_list_reroll()}\n")
+                    if list_set_keep_actions[action] == empty_set:
+                        game_events_to_record.append(f" action {action} is keep none\n")
+                    elif dice_set_before_reroll == list_set_keep_actions[action]:
+                        game_events_to_record.append(f" dice set {myDice.as_set()} action set "
+                                                     f"{list_set_keep_actions[action]} action {action} is keep all "
+                                                     f"{myDice.get_list_reroll()}\n")
+                    else:
+                        game_events_to_record.append(f" action {action} is {list_set_keep_actions[action]}\n")
                     game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
 
                 if PRINT:
