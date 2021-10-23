@@ -51,6 +51,8 @@ lo_counter = 0
 hi_counter = 0
 action_60_counter = 0
 empty_set = set()
+score_straight_fails = 0
+score_full_fails = 0
 
 all_scored = False
 
@@ -67,12 +69,17 @@ for game_number in range(NUM_GAMES):
 
     while not all_scored:
 
+        straight_detected = False
+        full_detected = False
+
         turn += 1
         myDice.reset()
-        # if turn == 1:
-        #     myDice.roll_Yum()
-        # else:
         myDice.roll()
+
+        if myDice.is_straight() and score.is_category_available("Straight"):
+            straight_detected = True
+        elif myDice.is_full() and score.is_category_available("Full"):
+            full_detected = True
 
         if PRINT:
             print("initial roll ", myDice.get_num_rolls())
@@ -80,6 +87,12 @@ for game_number in range(NUM_GAMES):
         if print_record_games:
             game_events_to_record.append(f"Turn {turn}\n")
             game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
+            if straight_detected:
+                game_events_to_record.append(f"STRAIGHT DETECTED ")
+                # straight_detected = False  # reset flag
+            if full_detected:
+                game_events_to_record.append(f"FULL DETECTED ")
+                # full_detected = False  # reset flag
 
         if not roll_seq:
 
@@ -103,8 +116,19 @@ for game_number in range(NUM_GAMES):
                 dice_set_before_reroll = myDice.as_set()  # for knowing if it's Keep All action
                 myDice.roll_list_reroll()
 
+                if myDice.is_straight() and score.is_category_available("Straight"):
+                    straight_detected = True
+                elif myDice.is_full() and score.is_category_available("Full"):
+                    full_detected = True
+
                 if print_record_games:
                     game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
+                    if straight_detected:
+                        game_events_to_record.append(f"STRAIGHT DETECTED ")
+                        # straight_detected = False  # reset flag
+                    if full_detected:
+                        game_events_to_record.append(f"FULL DETECTED ")
+                        # full_detected = False  # reset flag
                     if list_set_keep_actions[action] == empty_set:
                         game_events_to_record.append(f" action {action} is keep none\n")
                     elif dice_set_before_reroll == list_set_keep_actions[action]:
@@ -138,6 +162,14 @@ for game_number in range(NUM_GAMES):
         if print_record_games:
             game_events_to_record.append(f"\nScored {score.get_category_score(score_int_to_cat(category_scored))}"
                                          f" in category {score_int_to_cat(category_scored)}\n")
+            if straight_detected and score_int_to_cat(category_scored) != 'Straight':
+                game_events_to_record.append(f"FAILED TO SCORE STRAIGHT\n")
+                straight_detected = False  # reset flag
+                score_straight_fails += 1
+            if full_detected and score_int_to_cat(category_scored) != 'Full':
+                game_events_to_record.append(f"FAILED TO SCORE FULL\n")
+                full_detected = False  # reset flag
+                score_full_fails += 1
 
         all_scored = score.all_scored()
 
@@ -176,6 +208,8 @@ print(f"full count = {full_counter}")
 print(f"lo count = {lo_counter}")
 print(f"hi count = {hi_counter}")
 print(f"table action 60 happened {action_60_counter} times")
+print(f"straight score fails = {score_straight_fails}")
+print(f"full score fails = {score_full_fails}")
 
 if print_record_games:
     with open("games.txt", "wt") as file_record_games:

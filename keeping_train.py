@@ -71,10 +71,15 @@ class KeepingTrain:
                 almost_straight_list_per_roll = []
                 almost_full_list_per_roll = []
                 almost_yum_list_per_roll = []
+                # for tracking Straight and Full
+                straight_list_per_roll = []
+                full_list_per_roll = []
 
                 almost_straight_list_per_roll.append(self.dice.is_almost_straight())
                 almost_full_list_per_roll.append(self.dice.is_almost_full())
                 almost_yum_list_per_roll.append(self.dice.is_almost_yum())
+                straight_list_per_roll.append(self.dice.is_straight())
+                full_list_per_roll.append(self.dice.is_full())
 
                 potential_max_score_previous_category = \
                     (self.score.get_potential_max_score(self.dice))[POT_MAX_SCORE_CAT_IND]
@@ -111,7 +116,8 @@ class KeepingTrain:
                     almost_straight_list_per_roll.append(self.dice.is_almost_straight())
                     almost_full_list_per_roll.append(self.dice.is_almost_full())
                     almost_yum_list_per_roll.append(self.dice.is_almost_yum())
-
+                    straight_list_per_roll.append(self.dice.is_straight())
+                    full_list_per_roll.append(self.dice.is_full())
 
                     # KEEPING ACTION <---
 
@@ -122,13 +128,27 @@ class KeepingTrain:
                     #
                     reward = 0
 
+                    # Check if you abandoned the Straight:
+                    if self.score.is_category_available('Straight'):
+                        if straight_list_per_roll[roll-2] and not straight_list_per_roll[roll-1]:
+                            reward -= 100  # you abandoned the straight!!
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"ABANDONED straight pun = {reward}")
+
+                    # Check if you abandoned the Full:
+                    if self.score.is_category_available('Full'):
+                        if full_list_per_roll[roll-2] and not full_list_per_roll[roll-1]:
+                            reward -= 100  # you abandoned the full!!
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"ABANDONED full pun = {reward}")
+
                     if potential_max_score_previous > potential_max_score:
                         if potential_max_score_previous >= (potential_max_score+25):
-                            reward = -30  # You abandoned the straight probably
+                            reward -= 30  # You abandoned the straight probably
                             if episode % NUM_SHOW == 0 and turn == 4:
                                 print(f"big decrease pun = {reward}")
                         else:
-                            reward = potential_max_score - potential_max_score_previous
+                            reward += (potential_max_score - potential_max_score_previous)
                             if episode % NUM_SHOW == 0 and turn == 4:
                                 print(f"decrease pun = {reward}")
 
@@ -144,12 +164,12 @@ class KeepingTrain:
                         if episode % NUM_SHOW == 0 and turn == 4:
                             print(f"above line reward = {reward}")
                         if potential_max_score_previous == potential_max_score:
-                            reward += -15  # like mdc stagnation
+                            reward += -65  # like mdc stagnation
                             if episode % NUM_SHOW == 0 and turn == 4:
                                 print(f"mdc stagnation = {reward}")
                         if potential_max_score_category == potential_max_score_previous_category:
                             if potential_max_score_previous > potential_max_score:
-                                reward += -50  # like mdc decrease
+                                reward += -115  # like mdc decrease
                                 if episode % NUM_SHOW == 0 and turn == 4:
                                     print(f"mdc decease = {reward}")
 
@@ -163,17 +183,18 @@ class KeepingTrain:
                             reward += -10
                             if episode % NUM_SHOW == 0 and turn == 4:
                                 print(f"straight pun = {reward}")
-                    # if self.score.is_category_available('Full') and not self.dice.is_full():  # and potential_max_score < 21:
-                    #     if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
-                    #         # we got further away from full
-                    #         reward += -15
-
-                    # if score.is_category_available('Yum'):
-                    #     if myDice.is_yum():
-                    #         pass
-                    #     elif almost_yum_list_per_roll[roll-2] and not almost_yum_list_per_roll[roll-1]:
-                    #         # we got further away from yum
-                    #         reward -= 40
+                    if self.score.is_category_available('Full') and not self.dice.is_full():  # and potential_max_score < 21:
+                        if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
+                            # we got further away from full
+                            reward += -15
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"Full pun = {reward}")
+                    if self.score.is_category_available('Yum') and not self.dice.is_yum():
+                        if almost_yum_list_per_roll[roll-2] and not almost_yum_list_per_roll[roll-1]:
+                            # we got further away from yum
+                            reward -= 40
+                            if episode % NUM_SHOW == 0 and turn == 4:
+                                print(f"Yum pun = {reward}")
 
                     potential_max_score_previous = potential_max_score
                     potential_max_score_previous_category = potential_max_score_category
