@@ -70,8 +70,8 @@ track_score_array = np.zeros(6)
 
 keeping_train = KeepingTrain()
 
-learning_rates = [30]
-discounts = [80]
+learning_rates = [25]  # was 30
+discounts = [85]  # was 80
 
 # Last training 5M LR 0.3 DIS 0.8 went well (Oct 17, the one with the good action 60 result)
 
