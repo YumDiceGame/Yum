@@ -122,8 +122,11 @@ class Score:
                 elif category == 'High' or category == 'Low':
                     potential_score.append((category, self.compute_score_hi_lo(category, dice)))
                 else:  # 1's thru 6's
-                    potential_score.append((category, 7 * dice.get_dict()[str(score_cat_to_int(category))]))
-        return max(potential_score, key=lambda x: x[1])  # second element
+                    potential_score.append((category, 10 * dice.get_dict()[str(score_cat_to_int(category))]))
+                # find the max (tuple)
+                max_score_and_cat_tuple = max(potential_score, key=lambda x: x[1])
+        return max_score_and_cat_tuple[1], max_score_and_cat_tuple[0]
+        # return max(potential_score, key=lambda x: x[1])  # second element
 
     def assess_lo_hi_score(self, score_amount, category_scored):
         '''

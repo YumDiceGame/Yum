@@ -1,4 +1,4 @@
-# Playing Yum game above the line only (1's through 6's)
+# Playing Yum game
 # with Q learning
 
 
