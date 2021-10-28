@@ -26,7 +26,7 @@ else:
     Save_q_table = False
     PRINT = False
 
-Auto_shutdown = True
+Auto_shutdown = False
 
 
 # Load scoring q-table:
@@ -70,14 +70,18 @@ track_score_array = np.zeros(6)
 
 keeping_train = KeepingTrain()
 
-learning_rates = [25]  # was 30
-discounts = [85]  # was 80
-
-# Last training 5M LR 0.3 DIS 0.8 went well (Oct 17, the one with the good action 60 result)
+learning_rates = [15]  # list(range(20, 80, 20))
+discounts = [85]  # list(range(40, 100, 20))
+# LR of 0.8 seems that it's not good
+# LR 0.2 DIS 0.8 seems promising
 
 for learning_rate in learning_rates:
     for discount in discounts:
-        q_table_keeping = np.random.uniform(low=0, high=1, size=(q_table_height, NUM_KEEPING_ACTIONS))
+        if Use_prior_q_table:
+            with open("q_table_keeping.pickle", "rb") as f:
+                q_table_keeping = pickle.load(f)
+        else:
+            q_table_keeping = np.random.uniform(low=0, high=1, size=(q_table_height, NUM_KEEPING_ACTIONS))
         print(f"LR = {learning_rate/100} DIS = {discount/100}")
         keeping_train.train(q_table_scoring, q_table_keeping, list_all_dice_rolls, list_scoreable_categories,
                             keeping_actions_masks, action_to_dice_to_keep, learning_rate/100, discount/100)
