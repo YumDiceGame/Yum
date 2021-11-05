@@ -20,13 +20,13 @@ if Train:
     Use_prior_q_table = False
     Save_q_table = True
     PRINT = False
+    Auto_shutdown = True
 else:
-    do_epsilon = True
+    do_epsilon = False
     Use_prior_q_table = True
     Save_q_table = False
     PRINT = False
-
-Auto_shutdown = False
+    Auto_shutdown = False
 
 
 # Load scoring q-table:
@@ -84,7 +84,7 @@ for learning_rate in learning_rates:
             q_table_keeping = np.random.uniform(low=0, high=1, size=(q_table_height, NUM_KEEPING_ACTIONS))
         print(f"LR = {learning_rate/100} DIS = {discount/100}")
         keeping_train.train(q_table_scoring, q_table_keeping, list_all_dice_rolls, list_scoreable_categories,
-                            keeping_actions_masks, action_to_dice_to_keep, learning_rate/100, discount/100)
+                            keeping_actions_masks, action_to_dice_to_keep, learning_rate/100, discount/100, do_epsilon)
 
 # Save q table
 if Save_q_table:

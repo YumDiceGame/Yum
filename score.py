@@ -22,6 +22,11 @@ class Score:
         self._re_score_alert = 0
         return self._scores
 
+    def set_category(self, category, status):
+        # Set directly category to T/F
+        # for debugging
+        self._scores[category][0] = status
+
     def get_score_dict(self):
 
         return self._scores
