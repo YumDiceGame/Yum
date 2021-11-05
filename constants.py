@@ -1,4 +1,4 @@
-# Diffed with across_line_old 7/22/21
+# Useful constants
 
 NUM_DICE = 5
 NUM_DIE_FACES = 6
@@ -13,7 +13,7 @@ BELOW_THE_LINE_CATEGORIES = ['Yum', 'Straight', 'Full', 'Low', 'High']
 YUM_COL = 6 # Cat7 - 1 for pos
 LEARNING_RATE = 0.2  # was 0.1 till 9/25/21  the 0.2, 0.275 gave good results
 DISCOUNT = 0.4  # was 0.95 till 9/21/21.  0.75, 0.725 gave great results for above the line 0.7, 0.5 ok
-NUM_EPISODES = 5_000_000  # 15_000_000  # was 15M
+NUM_EPISODES = 12_000_000 #  6_000_000
 START_EPSILON_DECAYING = 100_000  #  500_000  # NUM_EPISODES//10  # was //5
 END_EPSILON_DECAYING = NUM_EPISODES-1  # 9*NUM_EPISODES//10  # was 4//5
 EVAL_Q_TABLE = 20_000  # time to evaluate q table for convergence
@@ -26,3 +26,4 @@ NUM_TRACK_SCORE = 10_000
 
 POT_MAX_SCORE_IND = 1
 POT_MAX_SCORE_CAT_IND = 0
+ACTION_60 = 60
