@@ -13,26 +13,18 @@ import matplotlib.pyplot as plt
 
 PRINT = False
 
-# Load q-tables:
-# "q_table_2d_yum.pickle" for the dice keeping actions
-# with open("q_table_2d_yum.pickle", "rb") as f:
-#     q_table = pickle.load(f)
-# And "" for the scoring actions
-with open("q_table_scoring.pickle", "rb") as score_q_table_file:
-    q_table_scoring = pickle.load(score_q_table_file)
+# Load q-tables
+with open("q_table.pickle", "rb") as q_table_file:
+    q_table = pickle.load(q_table_file)
 
-with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
-    q_table_keeping = pickle.load(keeping_q_table_file)
-
-# Create q_table_scoring_rows
-q_table_scoring_rows = do_q_table_rows()
+# Create q_table_rows
+q_table_rows = do_q_table_rows()
 
 # Action q table:
 action_table = action_q_table()
 
 # Map action to dice to keep and action masks
 list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_table()
-
 
 # For saving games
 game_events_to_record = []
@@ -100,19 +92,20 @@ for game_number in range(NUM_GAMES):
 
                 # This is what is used now for the state:
                 # Rows are in the same order as score q table
-                q_table_keeping_rows_index = q_table_scoring_rows[0].index(
+                q_table_rows_index = q_table_rows[0].index(
                     myDice.get_dict_as_vector() + score.get_available_cat_vector())
 
                 # Action
                 # first: add action 60 to mask if straight not avail
                 keeping_actions_mask = list(keep_action_mask_dict[myDice.as_short_string()])
-                if not score.is_category_available('Straight'):
-                    keeping_actions_mask[60] = 1
-                    # print(f"masking action 60 {score.get_available_cat_vector()}")
+                # if not score.is_category_available('Straight'):
+                #     keeping_actions_mask[60] = 1
+                #    print(f"masking action 60 {score.get_available_cat_vector()}")
+                action = (ma.masked_array(q_table[q_table_rows_index][0:NUM_TOTAL_ACTIONS],
+                                          list(keeping_actions_mask) + MASK_OUT_SCORE)).argmax()
                 # action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
                 #            keep_action_mask_dict[myDice.as_short_string()])).argmax()
-                action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
-                                          keeping_actions_mask)).argmax()
+
                 if action == 60:
                     print("action 60")
                     action_60_counter += 1
@@ -129,7 +122,7 @@ for game_number in range(NUM_GAMES):
                     full_detected = True
 
                 if print_record_games:
-                    game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
+                    game_events_to_record.append(f"row = {q_table_rows_index} ")
                     if straight_detected:
                         game_events_to_record.append(f"STRAIGHT DETECTED ")
                         # straight_detected = False  # reset flag
@@ -155,25 +148,24 @@ for game_number in range(NUM_GAMES):
 
         # Score category
 
-        # score.score_a_category(score_int_to_cat(state_face_max_die_count), myDice.dice())
-        # Commented out the above "easy score", now we use the scoring q_table
-        # need to compute q_table_score index
-        # hey below whys q_table_scoring_rows[0] -> it's ok!
-        q_table_scoring_rows_index = q_table_scoring_rows[0].index(myDice.get_dict_as_vector() + score.get_available_cat_vector())
-        category_scored = score.score_with_q_table(q_table_scoring, q_table_scoring_rows_index, myDice)
+        q_table_rows_index = q_table_rows[0].index(myDice.get_dict_as_vector() + score.get_available_cat_vector())
+        action = (ma.masked_array(q_table[q_table_rows_index][0:NUM_TOTAL_ACTIONS],
+                                  MASK_OUT_KEEP + score.get_available_cat_vector())).argmax()
+        category_to_score = score_int_to_cat(action + 1 - NUM_KEEPING_ACTIONS)
+        score.score_a_category(category_to_score, myDice)
 
         if roll_seq:
-            print(f"{myDice} category scored = {score_int_to_cat(category_scored)} category score = "
-                  f"{score.get_category_score(score_int_to_cat(category_scored))}")
+            print(f"{myDice} category scored = {score_int_to_cat(category_to_score)} category score = "
+                  f"{score.get_category_score(score_int_to_cat(category_to_score))}")
 
         if print_record_games:
-            game_events_to_record.append(f"\nScored {score.get_category_score(score_int_to_cat(category_scored))}"
-                                         f" in category {score_int_to_cat(category_scored)}\n")
-            if straight_detected and score_int_to_cat(category_scored) != 'Straight':
+            game_events_to_record.append(f"\nScored {score.get_category_score(category_to_score)}"
+                                         f" in category {category_to_score}\n")
+            if straight_detected and category_to_score != 'Straight':
                 game_events_to_record.append(f"FAILED TO SCORE STRAIGHT\n")
                 straight_detected = False  # reset flag
                 score_straight_fails += 1
-            if full_detected and score_int_to_cat(category_scored) != 'Full':
+            if full_detected and category_to_score != 'Full':
                 game_events_to_record.append(f"FAILED TO SCORE FULL\n")
                 full_detected = False  # reset flag
                 score_full_fails += 1

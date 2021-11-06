@@ -29,6 +29,9 @@ class action_q_table(DiceSet):
                              {2, 4, 5, 6}, {3, 4, 5, 6}, {1, 2, 3, 4, 5}, {1, 2, 3, 4, 6}, {1, 2, 3, 5, 6},
                              {1, 2, 4, 5, 6}, {1, 3, 4, 5, 6}, {2, 3, 4, 5, 6}, {'K4'}]
 
+    def get_number_of_actions(self):
+        return len(self.list_set_keep_actions)
+
     def print_all_action_q_table(self):
         # Prints the following in "list_of_die_rolls.txt":
         # - all possible rolls (w/o any duplicates) (section 1, cols 1-4)
