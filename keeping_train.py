@@ -27,7 +27,7 @@ class KeepingTrain:
         if condition:
             print(item)
 
-    def train(self, q_table_scoring, q_table_keeping, list_all_dice_rolls, list_scoreable_categories,
+    def train(self, q_table, list_all_dice_rolls, list_scoreable_categories,
               keeping_actions_masks, action_to_dice_to_keep, learning_rate, discount, do_epsilon):
 
         if do_epsilon:
@@ -90,13 +90,13 @@ class KeepingTrain:
                     # KEEPING ACTION --->
                     if np.random.random() < epsilon:
                         # Get random dice keeping action
-                        possible_random_actions = ma.masked_array([*range(0, NUM_KEEPING_ACTIONS)],
-                                                                  keeping_actions_masks[self.dice.as_short_string()])
+                        possible_random_actions = ma.masked_array([*range(0, NUM_TOTAL_ACTIONS)],
+                                                                  list(keeping_actions_masks[self.dice.as_short_string()]) + MASK_OUT_SCORE)
                         masked_random_actions = possible_random_actions[possible_random_actions.mask == False]
                         action = random.choice(masked_random_actions)
                     else:
-                        action = (ma.masked_array(q_table_keeping[state_index][0:NUM_KEEPING_ACTIONS],
-                                                  keeping_actions_masks[self.dice.as_short_string()])).argmax()
+                        action = (ma.masked_array(q_table[state_index][0:NUM_TOTAL_ACTIONS],
+                                    list(keeping_actions_masks[self.dice.as_short_string()]) + MASK_OUT_SCORE)).argmax()
 
                     self.dice.make_list_reroll_for_selected_die_faces(action_to_dice_to_keep[action])
                     self.dice.roll_list_reroll()
@@ -215,38 +215,45 @@ class KeepingTrain:
 
                     # SCORE CATEGORY --->
                     # Moved to here so as to get some feedback for the learning
-                    # Scoring with previously trained score q table
+                    # Integrating the scoring learning
                     if roll == NUM_ROLLS:  # Last roll
-                        # q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
-                        #                                        list_all_dice_rolls, list_scoreable_categories)
-                        category_scored = self.score.score_with_q_table(q_table_scoring, new_state_index, self.dice)
-                        self.print_cond(self.trace_reward, f"cat scored {score_int_to_cat(category_scored)} "
-                                    f"scored amount {self.score.get_category_score(score_int_to_cat(category_scored))}")
-                        if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
+
+                        if np.random.random() < epsilon:
+                            # Get random scoring action
+                            possible_random_actions = ma.masked_array([*range(0, NUM_TOTAL_ACTIONS)],
+                                                                      MASK_OUT_KEEP + self.score.get_available_cat_vector())
+                            masked_random_actions = possible_random_actions[possible_random_actions.mask == False]
+                            action = random.choice(masked_random_actions)
+                        else:
+                            action = (ma.masked_array(q_table[state_index][0:NUM_TOTAL_ACTIONS],
+                                                      MASK_OUT_KEEP + self.score.get_available_cat_vector())).argmax()
+
+                        category_scored = score_int_to_cat(action+1-NUM_KEEPING_ACTIONS)
+                        self.score.score_a_category(category_scored, self.dice)
+
+                        self.print_cond(self.trace_reward, f"cat scored {category_scored} "
+                                    f"scored amount {self.score.get_category_score(category_scored)}")
+                        if category_scored in ABOVE_THE_LINE_CATEGORIES:
                             # penalty for anything less than 5 of a kind
-                            penalty = 5 * (NUM_DICE - (self.score.get_category_score(score_int_to_cat(category_scored)) / category_scored))
+                            penalty = 5 * (NUM_DICE - (self.score.get_category_score(category_scored) /
+                                                       score_cat_to_int(category_scored)))
                             reward -= penalty
-                            self.print_cond(self.trace_reward, f"last turn reward = {reward} penalty = {penalty}")
+                            self.print_cond(self.trace_reward, f"scored above the line reward = {reward} "
+                                                               f"penalty = {penalty}")
+                        else:  # scored below the line
+                            pass  # if self.score.get_category_score(category_scored)
                     # SCORE CATEGORY <---
 
                     # Q UPDATE --->
                     # should be similar to:
-                    max_future_q = np.max(q_table_keeping[new_state_index][action])
+                    max_future_q = np.max(q_table[new_state_index][action])
 
-                    current_q = q_table_keeping[state_index][action]
+                    current_q = q_table[state_index][action]
 
                     new_q = (1 - learning_rate) * current_q + learning_rate * (reward + discount * max_future_q)
                     #
                     # # Update Q table with new Q value
-                    q_table_keeping[state_index][action] = new_q
-
-
-                # SCORE CATEGORY --->
-                # Scoring with previously trained score q table
-                # need to compute q_table_score index
-                # q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
-                #                                        list_all_dice_rolls, list_scoreable_categories)
-                # category_scored = self.score.score_with_q_table(q_table_scoring, q_table_scoring_index, self.dice)
+                    q_table[state_index][action] = new_q
 
                 # SCORE CATEGORY <---
 

@@ -39,3 +39,11 @@ myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
 myDice.get_list_reroll()
 
 print(myDice.get_list_reroll())
+
+dbg_rg = range(NUM_KEEPING_ACTIONS, NUM_KEEPING_ACTIONS + NUM_SCORE_CATEGORIES)
+dbg_v = myScore.get_available_cat_vector()
+vec = [1] * NUM_KEEPING_ACTIONS
+vec2 = vec + myScore.get_available_cat_vector()
+possible_random_actions = ma.masked_array([*range(0, NUM_KEEPING_ACTIONS + NUM_SCORE_CATEGORIES)],
+                                          vec + myScore.get_available_cat_vector())
+print("hi")
