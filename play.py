@@ -98,9 +98,9 @@ for game_number in range(NUM_GAMES):
                 # Action
                 # first: add action 60 to mask if straight not avail
                 keeping_actions_mask = list(keep_action_mask_dict[myDice.as_short_string()])
-                # if not score.is_category_available('Straight'):
-                #     keeping_actions_mask[60] = 1
-                #    print(f"masking action 60 {score.get_available_cat_vector()}")
+                if not score.is_category_available('Straight'):
+                    keeping_actions_mask[60] = 1
+                    # print(f"masking action 60 {score.get_available_cat_vector()}")
                 action = (ma.masked_array(q_table[q_table_rows_index][0:NUM_TOTAL_ACTIONS],
                                           list(keeping_actions_mask) + MASK_OUT_SCORE)).argmax()
                 # action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],

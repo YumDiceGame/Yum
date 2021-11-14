@@ -20,7 +20,7 @@ if Train:
     Use_prior_q_table = False
     Save_q_table = True
     PRINT = False
-    Auto_shutdown = False
+    Auto_shutdown = True
 else:
     do_epsilon = False
     Use_prior_q_table = True
@@ -70,7 +70,7 @@ track_score_array = np.zeros(6)
 
 keeping_train = KeepingTrain()
 
-learning_rates = [15]  # list(range(20, 80, 20))
+learning_rates = [25]  # list(range(20, 80, 20))
 discounts = [85]  # list(range(40, 100, 20))
 # LR of 0.8 seems that it's not good
 # LR 0.2 DIS 0.8 seems promising

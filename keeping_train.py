@@ -3,6 +3,7 @@
 import random
 from dice import *
 from score import *
+from scoring_reward import scoring_reward
 
 
 def calc_row_index(dice, available_categories, list_all_dice_rolls, list_scoreable_categories):
@@ -233,15 +234,40 @@ class KeepingTrain:
 
                         self.print_cond(self.trace_reward, f"cat scored {category_scored} "
                                     f"scored amount {self.score.get_category_score(category_scored)}")
-                        if category_scored in ABOVE_THE_LINE_CATEGORIES:
-                            # penalty for anything less than 5 of a kind
-                            penalty = 5 * (NUM_DICE - (self.score.get_category_score(category_scored) /
-                                                       score_cat_to_int(category_scored)))
-                            reward -= penalty
-                            self.print_cond(self.trace_reward, f"scored above the line reward = {reward} "
-                                                               f"penalty = {penalty}")
-                        else:  # scored below the line
-                            pass  # if self.score.get_category_score(category_scored)
+
+                        max_die_count = face_max_die_count = 0
+                        if not self.score.is_above_the_line_all_scored():
+                            max_die_count, face_max_die_count = self.dice.max_die_count_for_available_category(
+                            self.score.get_available_cat_vector())
+
+                        # The below incorporates the old scoring_learning --->
+                        # results are below 120 :(
+                        # Learning profile looks a lot like the old baseline
+                        reward = scoring_reward(category_scored, self.dice, self.score, max_die_count, face_max_die_count)
+                        # <---
+
+                        # Tried the below first.
+                        # Ended giving about 120, so a bit more that with using "scoring_reward" function
+                        # Learning profile was quite particular, check it out in Git
+                        # if category_scored in ABOVE_THE_LINE_CATEGORIES:
+                        #     # penalty for anything less than 5 of a kind
+                        #     penalty = 5 * (NUM_DICE - (self.score.get_category_score(category_scored) /
+                        #                                score_cat_to_int(category_scored)))
+                        #     reward -= penalty
+                        #     self.print_cond(self.trace_reward, f"scored above the line reward = {reward} "
+                        #                                        f"penalty = {penalty}")
+                        # else:  # scored below the line
+                        #     above_the_line_score = self.score.get_category_score(category_scored)
+                        #     penalty = 0
+                        #     if above_the_line_score < 21:
+                        #         penalty = 25
+                        #     reward = above_the_line_score - penalty
+                        #     self.print_cond(self.trace_reward, f"scored below the line reward = {reward} "
+                        #                                        f"penalty = {penalty}")
+                        #
+                        # if self.score.is_category_available('Full') and self.dice.is_full() and category_scored != 'Full':
+                        #     reward -= 25
+
                     # SCORE CATEGORY <---
 
                     # Q UPDATE --->
