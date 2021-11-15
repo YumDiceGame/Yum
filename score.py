@@ -22,11 +22,6 @@ class Score:
         self._re_score_alert = 0
         return self._scores
 
-    def set_category(self, category, status):
-        # Set directly category to T/F
-        # for debugging
-        self._scores[category][0] = status
-
     def get_score_dict(self):
 
         return self._scores
@@ -121,7 +116,8 @@ class Score:
                         potential_score.append(('Straight', 0))
                 elif category == 'Full':
                     if dice.is_full():
-                        potential_score.append(('Full', 25))
+                        # need to make it worth more than three of a kind (which is worth 30)
+                        potential_score.append(('Full', 35))  # was 25, but see above ^
                     else:
                         potential_score.append(('Full', 0))
                 elif category == 'High' or category == 'Low':
@@ -324,11 +320,11 @@ class Score:
         penalty = 0
         if scratched_cat == 'Yum' or scratched_cat == 'Ones':
             penalty = 35
-        elif scratched_cat == 'Straight' or scratched_cat == 'Twos':
+        elif scratched_cat == 'Threes' or scratched_cat == 'Twos':  # where 'Threes' is used to be 'Straight'
             penalty = 40
         elif scratched_cat == 'Full' or scratched_cat == 'Low' or scratched_cat == 'High':
             penalty = 50
-        elif scratched_cat == 'Threes' or scratched_cat == 'Fours':
+        elif scratched_cat == 'Straight' or scratched_cat == 'Fours':  # where 'Straight' is used to be 'Threes'
             penalty = 60
         elif scratched_cat == 'Fives' or scratched_cat == 'Sixes':
             penalty = 75
