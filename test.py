@@ -6,17 +6,11 @@ import numpy as np
 import numpy.ma as ma
 myDice = DiceSet()
 
-myScore = Score()
-myScore.reset_scores()
-CompScore = Score()
-CompScore.reset_scores()
-
-# Action q table:
-action_table = action_q_table()
-
-# Map action to dice to keep and action masks
-list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_table()
-
+# myScore = Score()
+# myScore.reset_scores()
+# CompScore = Score()
+# CompScore.reset_scores()
+#
 # my_scorecard_string = myScore.print_scorecard()
 # comp_scorecard_string = CompScore.print_scorecard()
 # both_scorecards = zip(my_scorecard_string, comp_scorecard_string)
@@ -32,18 +26,9 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 #
 # myDice.roll_Yum()
 # print(myDice.is_yum())
+# print(myDice.as_dict())
 
-action = 17
-myDice.set([3, 3, 3, 5, 5])
-myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
-myDice.get_list_reroll()
-
+myDice.roll()
+myDice.set_list_reroll([False, True, False, True, False])
 print(myDice.get_list_reroll())
-
-dbg_rg = range(NUM_KEEPING_ACTIONS, NUM_KEEPING_ACTIONS + NUM_SCORE_CATEGORIES)
-dbg_v = myScore.get_available_cat_vector()
-vec = [1] * NUM_KEEPING_ACTIONS
-vec2 = vec + myScore.get_available_cat_vector()
-possible_random_actions = ma.masked_array([*range(0, NUM_KEEPING_ACTIONS + NUM_SCORE_CATEGORIES)],
-                                          vec + myScore.get_available_cat_vector())
-print("hi")
+print(myDice.is_keep_all())

@@ -179,6 +179,10 @@ class DiceSet:
 
         return self._list_reroll
 
+    def is_keep_all(self):
+        # return true if we are keeping all dice
+        return True not in self._list_reroll
+
     def set_list_reroll(self, list_reroll):
 
         self._list_reroll = list_reroll
