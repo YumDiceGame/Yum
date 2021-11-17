@@ -166,7 +166,7 @@ for episode in range(1, NUM_EPISODES):
             else:
                 reward += -240
         else:  # anything other than Yum
-            # prioritize above the line scoring
+            # prioritize below the line scoring
             if can_straight:
                 if scored_cat == 'Straight':
                     reward += 150

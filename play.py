@@ -11,14 +11,14 @@ from do_q_table import do_q_table_rows
 from do_keep_action_q_table import action_q_table
 import matplotlib.pyplot as plt
 
-PRINT = False
-
 # Load q-tables:
 # "q_table_2d_yum.pickle" for the dice keeping actions
 # with open("q_table_2d_yum.pickle", "rb") as f:
 #     q_table = pickle.load(f)
 # And "" for the scoring actions
+
 with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
+# with open("q_table_scoring.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
 with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
@@ -70,11 +70,12 @@ for game_number in range(NUM_GAMES):
 
     while not all_scored:
 
+        turn += 1
+        myDice.reset()
+
         straight_detected = False
         full_detected = False
 
-        turn += 1
-        myDice.reset()
         myDice.roll()
 
         if myDice.is_straight() and score.is_category_available("Straight"):
@@ -82,15 +83,14 @@ for game_number in range(NUM_GAMES):
         elif myDice.is_full() and score.is_category_available("Full"):
             full_detected = True
 
+
         if print_record_games:
-            game_events_to_record.append(f"Turn {turn}\n")
+            game_events_to_record.append(f"\nTurn {turn}\n")
             game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
-            if straight_detected:
-                game_events_to_record.append(f"STRAIGHT DETECTED ")
-                # straight_detected = False  # reset flag
-            if full_detected:
-                game_events_to_record.append(f"FULL DETECTED ")
-                # full_detected = False  # reset flag
+            # if straight_detected:
+            #     game_events_to_record.append(f"STRAIGHT DETECTED ")
+            # if full_detected:
+            #     game_events_to_record.append(f"FULL DETECTED ")
 
         if not roll_seq:
 
@@ -106,9 +106,6 @@ for game_number in range(NUM_GAMES):
                 keeping_actions_mask = list(keep_action_mask_dict[myDice.as_short_string()])
                 if not score.is_category_available('Straight'):
                     keeping_actions_mask[60] = 1
-                    # print(f"masking action 60 {score.get_available_cat_vector()}")
-                # action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
-                #            keep_action_mask_dict[myDice.as_short_string()])).argmax()
                 action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
                                           keeping_actions_mask)).argmax()
                 if action == 60:
@@ -118,34 +115,37 @@ for game_number in range(NUM_GAMES):
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
 
                 dice_set_before_reroll = myDice.as_set()  # for knowing if it's Keep All action
-                myDice.roll_list_reroll()
-
+                # Full override ... this should be done by training ... it was ok before, but now I have to override :/
+                if myDice.is_full() and score.is_category_available("Full"):
+                    full_detected = True
+                    # myDice.set_list_reroll([False] * NUM_DICE)  # Forcing keep all dice when Full detected
+                    if print_record_games:
+                        game_events_to_record.append(f" FULL DETECTED ")
+                # also override for straight but that one is A LOT less of an issue ... like 4 or 5 per thou
                 if myDice.is_straight() and score.is_category_available("Straight"):
                     straight_detected = True
-                elif myDice.is_full() and score.is_category_available("Full"):
-                    full_detected = True
+                    # myDice.set_list_reroll([False] * NUM_DICE) -> don't need override, behavior is good, keep
+                    if print_record_games:
+                        game_events_to_record.append(f" STRAIGHT DETECTED ")
+                else:  # no Full override
+                    pass
+                myDice.roll_list_reroll()  # put in the else if you want override
 
                 if print_record_games:
-                    game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
-                    if straight_detected:
-                        game_events_to_record.append(f"STRAIGHT DETECTED ")
-                        # straight_detected = False  # reset flag
-                    if full_detected:
-                        game_events_to_record.append(f"FULL DETECTED ")
-                        # full_detected = False  # reset flag
+                    # game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
+                    # if straight_detected:
+                    #     game_events_to_record.append(f"STRAIGHT DETECTED ")
+                    #     # straight_detected = False  # reset flag
+                    # if full_detected:
+                    #     game_events_to_record.append(f"FULL DETECTED ")
+                    #     # full_detected = False  # reset flag
                     if list_set_keep_actions[action] == empty_set:
                         game_events_to_record.append(f" action {action} is keep none\n")
                     elif dice_set_before_reroll == list_set_keep_actions[action]:
-                        game_events_to_record.append(f" dice set {myDice.as_set()} action set "
-                                                     f"{list_set_keep_actions[action]} action {action} is keep all "
-                                                     f"{myDice.get_list_reroll()}\n")
+                        game_events_to_record.append(f" action {action} is keep all\n")
                     else:
                         game_events_to_record.append(f" action {action} is {list_set_keep_actions[action]}\n")
                     game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
-
-                if PRINT:
-                    print("at roll ", myDice.get_num_rolls())
-                    print(myDice)
 
         else:  # Rolling from a pre-programmed sequence
             myDice.roll_seq(turn)
@@ -168,13 +168,16 @@ for game_number in range(NUM_GAMES):
                                          f" in category {score_int_to_cat(category_scored)}\n")
             if straight_detected and score_int_to_cat(category_scored) != 'Straight':
                 game_events_to_record.append(f"FAILED TO SCORE STRAIGHT\n")
-                straight_detected = False  # reset flag
+                # straight_detected = False  # reset flag
                 score_straight_fails += 1
             if full_detected and score_int_to_cat(category_scored) != 'Full':
                 game_events_to_record.append(f"FAILED TO SCORE FULL\n")
-                full_detected = False  # reset flag
+                # full_detected = False  # reset flag
                 # full_score_failed = True
                 score_full_fails += 1
+
+        straight_detected = False
+        full_detected = False
 
         all_scored = score.all_scored()
 
@@ -195,7 +198,7 @@ for game_number in range(NUM_GAMES):
     print(f"Total score for game {game_number + 1} is {game_score}\n")
 
     if print_record_games:
-        game_events_to_record.append(f"Total score for game {game_number+1} is {game_score}"
+        game_events_to_record.append(f"\nTotal score for game {game_number+1} is {game_score}"
                                      f" bonus is {score.get_bonus()}\n")
         game_events_to_record.append(f"-----\n")
 
