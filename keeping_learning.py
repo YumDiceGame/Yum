@@ -17,13 +17,11 @@ if Train:
     do_epsilon = True
     Use_prior_q_table = False
     Save_q_table = True
-    PRINT = False
     Auto_shutdown = True
 else:
     do_epsilon = False
     Use_prior_q_table = True
     Save_q_table = False
-    PRINT = False
     Auto_shutdown = False
 
 # Load q-tables:
