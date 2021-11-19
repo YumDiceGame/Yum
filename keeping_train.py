@@ -185,6 +185,10 @@ class KeepingTrain:
                     # Punish bad K4 action
                     if not self.score.is_category_available('Straight') and action == 'K4':
                         reward += -100
+                    # Punish bad cross-actions
+                    if (potential_max_score_category in ABOVE_THE_LINE_CATEGORIES) and \
+                            (len(action_to_dice_to_keep[action]) > 1):
+                        reward += -100
 
                     # if score.is_category_available('Yum'):
                     #     if myDice.is_yum():

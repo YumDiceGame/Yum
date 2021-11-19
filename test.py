@@ -28,8 +28,16 @@ myDice = DiceSet()
 # print(myDice.is_yum())
 # print(myDice.as_dict())
 
-myDice.roll()
-myDice.set_list_reroll([False, True, False, True, False])
-print(myDice.get_list_reroll())
-print(myDice.is_keep_all())
-print([False] * NUM_DICE)
+action_table = action_q_table()
+action_to_dice_to_keep, keeping_actions_masks = action_table.print_all_action_q_table()
+
+print("len 0 = ", len(action_to_dice_to_keep[0]) > 1)
+print("len 1 = ", len(action_to_dice_to_keep[1]) > 1)
+print("len 8 = ", len(action_to_dice_to_keep[8]) > 1)
+
+
+# myDice.roll()
+# myDice.set_list_reroll([False, True, False, True, False])
+# print(myDice.get_list_reroll())
+# print(myDice.is_keep_all())
+# print([False] * NUM_DICE)

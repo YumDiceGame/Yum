@@ -104,8 +104,8 @@ for game_number in range(NUM_GAMES):
                 # Action
                 # first: add action 60 to mask if straight not avail
                 keeping_actions_mask = list(keep_action_mask_dict[myDice.as_short_string()])
-                if not score.is_category_available('Straight'):
-                    keeping_actions_mask[60] = 1
+                # if not score.is_category_available('Straight'):
+                #     keeping_actions_mask[60] = 1
                 action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
                                           keeping_actions_mask)).argmax()
                 if action == 60:
@@ -118,7 +118,7 @@ for game_number in range(NUM_GAMES):
                 # Full override ... this should be done by training ... it was ok before, but now I have to override :/
                 if myDice.is_full() and score.is_category_available("Full"):
                     full_detected = True
-                    # myDice.set_list_reroll([False] * NUM_DICE)  # Forcing keep all dice when Full detected
+                    myDice.set_list_reroll([False] * NUM_DICE)  # Forcing keep all dice when Full detected
                     if print_record_games:
                         game_events_to_record.append(f" FULL DETECTED ")
                 # also override for straight but that one is A LOT less of an issue ... like 4 or 5 per thou
@@ -217,6 +217,21 @@ print(f"hi count = {hi_counter}")
 print(f"table action 60 happened {action_60_counter} times")
 print(f"straight score fails = {score_straight_fails}")
 print(f"full score fails = {score_full_fails}")
+
+if print_record_games:
+    game_events_to_record.append(f"\nSummary: \n")
+    game_events_to_record.append(f"average score = {average_score}\n")
+    game_events_to_record.append(f"min score = {min(scores)}\n")
+    game_events_to_record.append(f"max score = {max(scores)}\n")
+    game_events_to_record.append(f"bonus happened {bonus_cnt} times\n")
+    game_events_to_record.append(f"yum count = {yum_counter}\n")
+    game_events_to_record.append(f"straight count = {straight_counter}\n")
+    game_events_to_record.append(f"full count = {full_counter}\n")
+    game_events_to_record.append(f"lo count = {lo_counter}\n")
+    game_events_to_record.append(f"hi count = {hi_counter}\n")
+    game_events_to_record.append(f"table action 60 happened {action_60_counter} times\n")
+    game_events_to_record.append(f"straight score fails = {score_straight_fails}\n")
+    game_events_to_record.append(f"full score fails = {score_full_fails}\n")
 
 if print_record_games:
     with open("games.txt", "wt") as file_record_games:
