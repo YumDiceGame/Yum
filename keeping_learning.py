@@ -17,7 +17,7 @@ if Train:
     do_epsilon = True
     Use_prior_q_table = False
     Save_q_table = True
-    Auto_shutdown = True
+    Auto_shutdown = False
 else:
     do_epsilon = False
     Use_prior_q_table = True
