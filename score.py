@@ -116,8 +116,12 @@ class Score:
                         potential_score.append(('Straight', 0))
                 elif category == 'Full':
                     if dice.is_full():
-                        # need to make it worth more than three of a kind (which is worth 30)
                         potential_score.append(('Full', 35))  # was 25, but see above ^
+                        # if not self.is_components_full_available(dice):  # Meaning that the die face comprising the full have been scored
+                        #     # need to make it worth more than three of a kind (which is worth 30)
+                        #     potential_score.append(('Full', 35))  # was 25, but see above ^
+                        # else:
+                        #     potential_score.append(('Full', 25))  # nominal Full value,
                     else:
                         potential_score.append(('Full', 0))
                 elif category == 'High' or category == 'Low':
@@ -235,8 +239,16 @@ class Score:
         return self._scores[category][1]
 
     def is_category_available(self, category_name):
-
         return not self._scores[category_name][0]
+
+    def is_components_full_available(self, dice):
+        '''
+        So we have a Full, but we want to see if the die faces of that Full hand are from categories that are scored
+        already.  Well, actually let's just do that with the three of a kind (the high value one)
+        '''
+        three_of_a_kind = list(dice.get_dict().keys())[list(dice.get_dict().values()).index(3)]
+        two_of_a_kind = list(dice.get_dict().keys())[list(dice.get_dict().values()).index(2)]
+        return self.is_category_available(score_int_to_cat(int(three_of_a_kind)))
 
     def print_available_cats(self):
         list_avail_cats = []
