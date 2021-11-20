@@ -54,8 +54,6 @@ if Use_prior_q_table:
         q_table_keeping = pickle.load(f)
 else:
     q_table_keeping = None
-    # q_table_keeping = np.random.uniform(low=0, high=1, size=(q_table_height, NUM_KEEPING_ACTIONS))
-
 
 myDice = DiceSet()
 score = Score()

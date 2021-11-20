@@ -6,8 +6,8 @@ import numpy as np
 import numpy.ma as ma
 myDice = DiceSet()
 
-# myScore = Score()
-# myScore.reset_scores()
+myScore = Score()
+myScore.reset_scores()
 # CompScore = Score()
 # CompScore.reset_scores()
 #
@@ -24,18 +24,28 @@ myDice = DiceSet()
 # for line in my_scorecard_string:
 #     print(line)
 #
-# myDice.roll_Yum()
+
 # print(myDice.is_yum())
 # print(myDice.as_dict())
 
-action_table = action_q_table()
-action_to_dice_to_keep, keeping_actions_masks = action_table.print_all_action_q_table()
+# action_table = action_q_table()
+# action_to_dice_to_keep, keeping_actions_masks = action_table.print_all_action_q_table()
+#
+# print("len 0 = ", len(action_to_dice_to_keep[0]) > 1)
+# print("len 1 = ", len(action_to_dice_to_keep[1]) > 1)
+# print("len 8 = ", len(action_to_dice_to_keep[8]) > 1)
 
-print("len 0 = ", len(action_to_dice_to_keep[0]) > 1)
-print("len 1 = ", len(action_to_dice_to_keep[1]) > 1)
-print("len 8 = ", len(action_to_dice_to_keep[8]) > 1)
 
+myDice.roll_Full()
+print(myDice)
+dice_dict = myDice.get_dict()
 
+print(myScore.is_components_full_available(myDice))
+
+# print(list(dice_dict.keys())[list(dice_dict.values()).index(3)])
+# print(list(dice_dict.keys())[list(dice_dict.values()).index(2)])
+
+# int(max(self._dict, key=self._dict.get))
 # myDice.roll()
 # myDice.set_list_reroll([False, True, False, True, False])
 # print(myDice.get_list_reroll())

@@ -139,7 +139,8 @@ class KeepingTrain:
                     if potential_max_score == 50: # Now valuing dice at 10 per
                         reward = 15  # Max!
                         self.print_cond(self.trace_reward, f"max_reward = {reward}")
-
+                    elif potential_max_score == 35:  # full case
+                        reward = 12
                     elif 40 <= potential_max_score < 50:
                         reward = 10
                         self.print_cond(self.trace_reward, f"reward 40 50 = {reward}")
@@ -184,7 +185,7 @@ class KeepingTrain:
                         reward += -100
                     # Punish bad K4 action
                     if not self.score.is_category_available('Straight') and action == 'K4':
-                        reward += -100
+                        reward += -150
                     # Punish bad cross-actions
                     if (potential_max_score_category in ABOVE_THE_LINE_CATEGORIES) and \
                             (len(action_to_dice_to_keep[action]) > 1):

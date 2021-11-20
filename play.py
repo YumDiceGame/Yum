@@ -118,7 +118,9 @@ for game_number in range(NUM_GAMES):
                 # Full override ... this should be done by training ... it was ok before, but now I have to override :/
                 if myDice.is_full() and score.is_category_available("Full"):
                     full_detected = True
-                    myDice.set_list_reroll([False] * NUM_DICE)  # Forcing keep all dice when Full detected
+                    # myDice.set_list_reroll([False] * NUM_DICE)  # Forcing keep all dice when Full detected
+                    # if print_record_games:
+                    #     game_events_to_record.append(f" pot max score = {score.get_potential_max_score(myDice)} ")
                     if print_record_games:
                         game_events_to_record.append(f" FULL DETECTED ")
                 # also override for straight but that one is A LOT less of an issue ... like 4 or 5 per thou
