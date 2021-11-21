@@ -49,7 +49,7 @@ straight_counter = 0
 full_counter = 0
 lo_counter = 0
 hi_counter = 0
-action_60_counter = 0
+bad_action_60_counter = 0
 empty_set = set()
 score_straight_fails = 0
 score_full_fails = 0
@@ -108,8 +108,9 @@ for game_number in range(NUM_GAMES):
                 #     keeping_actions_mask[60] = 1
                 action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
                                           keeping_actions_mask)).argmax()
-                if action == 60:
-                    action_60_counter += 1
+
+                if action == 60 and not score.is_category_available('Straight'):
+                    bad_action_60_counter += 1
 
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
@@ -216,7 +217,7 @@ print(f"straight count = {straight_counter}")
 print(f"full count = {full_counter}")
 print(f"lo count = {lo_counter}")
 print(f"hi count = {hi_counter}")
-print(f"table action 60 happened {action_60_counter} times")
+print(f"bad action 60 happened {bad_action_60_counter} times")
 print(f"straight score fails = {score_straight_fails}")
 print(f"full score fails = {score_full_fails}")
 
@@ -231,7 +232,7 @@ if print_record_games:
     game_events_to_record.append(f"full count = {full_counter}\n")
     game_events_to_record.append(f"lo count = {lo_counter}\n")
     game_events_to_record.append(f"hi count = {hi_counter}\n")
-    game_events_to_record.append(f"table action 60 happened {action_60_counter} times\n")
+    game_events_to_record.append(f"table action 60 happened {bad_action_60_counter} times\n")
     game_events_to_record.append(f"straight score fails = {score_straight_fails}\n")
     game_events_to_record.append(f"full score fails = {score_full_fails}\n")
 

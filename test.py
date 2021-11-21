@@ -40,7 +40,7 @@ myDice.roll_Full()
 print(myDice)
 dice_dict = myDice.get_dict()
 
-print(myScore.is_components_full_available(myDice))
+print("mdc = ", myDice.max_die_count_for_available_category(myScore.get_available_cat_vector()))
 
 # print(list(dice_dict.keys())[list(dice_dict.values()).index(3)])
 # print(list(dice_dict.keys())[list(dice_dict.values()).index(2)])
