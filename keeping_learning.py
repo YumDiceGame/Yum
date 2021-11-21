@@ -12,17 +12,10 @@ from do_q_table import do_q_table_rows
 from score import *
 from keeping_train import KeepingTrain
 
-Train = True
-if Train:
-    do_epsilon = True
-    Use_prior_q_table = False
-    Save_q_table = True
-    Auto_shutdown = False
-else:
-    do_epsilon = False
-    Use_prior_q_table = True
-    Save_q_table = False
-    Auto_shutdown = False
+do_epsilon = True
+Use_prior_q_table = False
+Save_q_table = True
+Auto_shutdown = False
 
 # Load q-tables:
 # "q_table_2d_yum.pickle" for the dice keeping actions

@@ -366,7 +366,10 @@ class DiceSet:
                         self._masked_dict[die] = self._dict[die]
                     i += 1
                 # print("avail_cat_vector = ", avail_cat_vector_above_line)
-                max_die_count_local = int(max(self._masked_dict.values()))
+                if len(self._masked_dict.values()) == 0:
+                    max_die_count_local = 0
+                else:
+                    max_die_count_local = int(max(self._masked_dict.values()))
 
                 # Let's also return the face in the same function
                 # Copied from face_max_die_count

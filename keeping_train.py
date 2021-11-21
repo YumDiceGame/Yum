@@ -41,7 +41,7 @@ class KeepingTrain:
         track_score_array = np.zeros(6)
 
         # This is to follow the evolution of the scoring
-        filename = f"score_track_progress_LR_{learning_rate}_DIS_{discount}.txt"
+        filename = f"score_track_progress_episodes_{NUM_EPISODES/1e6}M_LR_{learning_rate}_DIS_{discount}.txt"
         with open(filename, "w") as f:
             f.write(f"episode\teps\tscore\tbonus\tstraight\tfull\tlow\thigh\tyum\n")
 
@@ -183,9 +183,15 @@ class KeepingTrain:
                     # Punish bad keep all actions
                     if self.dice.is_keep_all() and potential_max_score < 21:
                         reward += -100
-                    # Punish bad K4 action
-                    if not self.score.is_category_available('Straight') and action == 'K4':
-                        reward += -150
+                    if action == 60:
+                        # Punish bad K4 action (bad meaning Straight isn't avail but we are doing action 60
+                        if not self.score.is_category_available('Straight'):
+                            reward += -100
+                        # Also punish the following case: is your action 60 pair is in an available above the line
+                        # category (rationale is you want to try to get more of that die face)
+                        mdc = self.dice.max_die_count_for_available_category(self.score.get_available_cat_vector())[0]
+                        if mdc >= 2:
+                            reward += -50
                     # Punish bad cross-actions
                     if (potential_max_score_category in ABOVE_THE_LINE_CATEGORIES) and \
                             (len(action_to_dice_to_keep[action]) > 1):
@@ -286,7 +292,7 @@ class KeepingTrain:
                 track_score_array = np.add(track_score_array, np.array(self.score.get_above_the_line_success()))
 
             if episode != 0 and episode % NUM_TRACK_SCORE == 0:
-                filename = f"score_track_progress_LR_{learning_rate}_DIS_{discount}.txt"
+                filename = f"score_track_progress_episodes_{NUM_EPISODES/1e6}M_LR_{learning_rate}_DIS_{discount}.txt"
                 with open(filename, "a") as f:
                     f.write(f"{episode}\t{epsilon:.2f}\t{track_average_score / NUM_GAMES_IN_LINE_EVAL}")
                     for item in track_score_array:
