@@ -10,17 +10,39 @@ from numpy import ma
 from do_q_table import do_q_table_rows
 from do_keep_action_q_table import action_q_table
 import matplotlib.pyplot as plt
+import os
 
-# Load q-tables:
-# "q_table_2d_yum.pickle" for the dice keeping actions
-# with open("q_table_2d_yum.pickle", "rb") as f:
-#     q_table = pickle.load(f)
-# And "" for the scoring actions
+def french(category):
+    if category == 'Ones':
+        french_translation = 'Un'
+    if category == 'Twos':
+        french_translation = 'Deux'
+    if category == 'Threes':
+        french_translation = 'Trois'
+    if category == 'Fours':
+        french_translation = 'Quatre'
+    if category == 'Fives':
+        french_translation = 'Cinq'
+    if category == 'Sixes':
+        french_translation = 'Six'
+    if category == 'Yum':
+        french_translation = 'Yum'
+    if category == 'Straight':
+        french_translation = 'Séquence'
+    if category == 'Full':
+        french_translation = 'Full'
+    if category == 'Low':
+        french_translation = 'Bas'
+    if category == 'High':
+        french_translation = 'Haut'
+    return french_translation
 
+
+# with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
 with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
-# with open("q_table_scoring.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
+# with open("q_table_keeping_reduced.pickle", "rb") as keeping_q_table_file:
 with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
     q_table_keeping = pickle.load(keeping_q_table_file)
 
@@ -36,7 +58,8 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 
 # For saving games
 game_events_to_record = []
-print_record_games = True
+print_record_games = False
+narrate_games = True
 roll_seq = False
 
 myDice = DiceSet()
@@ -83,14 +106,13 @@ for game_number in range(NUM_GAMES):
         elif myDice.is_full() and score.is_category_available("Full"):
             full_detected = True
 
-
         if print_record_games:
             game_events_to_record.append(f"\nTurn {turn}\n")
             game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
-            # if straight_detected:
-            #     game_events_to_record.append(f"STRAIGHT DETECTED ")
-            # if full_detected:
-            #     game_events_to_record.append(f"FULL DETECTED ")
+        if narrate_games:
+            print(f"Tour {turn}\n")
+            print(f"lancement numéro: {myDice.get_num_rolls()} dés: {myDice.dice()}")
+            input()
 
         if not roll_seq:
 
@@ -106,8 +128,11 @@ for game_number in range(NUM_GAMES):
                 keeping_actions_mask = list(keep_action_mask_dict[myDice.as_short_string()])
                 # if not score.is_category_available('Straight'):
                 #     keeping_actions_mask[60] = 1
+
                 action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
                                           keeping_actions_mask)).argmax()
+                # For the action, we are now using a 1D vector
+                # action = q_table_keeping[q_table_keeping_rows_index]
 
                 if action == 60 and not score.is_category_available('Straight'):
                     bad_action_60_counter += 1
@@ -150,6 +175,19 @@ for game_number in range(NUM_GAMES):
                         game_events_to_record.append(f" action {action} is {list_set_keep_actions[action]}\n")
                     game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
 
+                if narrate_games:
+                    if list_set_keep_actions[action] == empty_set:
+                        print(f"Je garde aucun dé")
+                        input()
+                    elif dice_set_before_reroll == list_set_keep_actions[action]:
+                        print(f"Je garde tous les dés")
+                        input()
+                    else:
+                        print(f"Je garde les {list_set_keep_actions[action]}")
+                        input()
+                    print(f"lancement numéro: {myDice.get_num_rolls()} dés: {myDice.dice()}")
+                    input()
+
         else:  # Rolling from a pre-programmed sequence
             myDice.roll_seq(turn)
 
@@ -160,7 +198,14 @@ for game_number in range(NUM_GAMES):
         # need to compute q_table_score index
         # hey below whys q_table_scoring_rows[0] -> it's ok!
         q_table_scoring_rows_index = q_table_scoring_rows[0].index(myDice.get_dict_as_vector() + score.get_available_cat_vector())
+
+        # this below if using the full size scoring q_table
         category_scored = score.score_with_q_table(q_table_scoring, q_table_scoring_rows_index, myDice)
+        # Now if using the reduced size scoring q_table
+
+        # category_scored = q_table_scoring[q_table_scoring_rows_index] + 1
+        # print("cat scored = ", category_scored)
+        #  score.score_a_category(score_int_to_cat(category_scored), myDice)
 
         if roll_seq:
             print(f"{myDice} category scored = {score_int_to_cat(category_scored)} category score = "
@@ -178,6 +223,16 @@ for game_number in range(NUM_GAMES):
                 # full_detected = False  # reset flag
                 # full_score_failed = True
                 score_full_fails += 1
+
+        if narrate_games:
+            print(f"\nJe score {score.get_category_score(score_int_to_cat(category_scored))}"
+                  f" dans la catégorie {french(score_int_to_cat(category_scored))}\n")
+            input()
+            scorecard_string = score.print_scorecard()
+            for score_line in scorecard_string:
+                print(score_line)
+            input()
+            os.system('clear')
 
         straight_detected = False
         full_detected = False
@@ -205,21 +260,28 @@ for game_number in range(NUM_GAMES):
                                      f" bonus is {score.get_bonus()}\n")
         game_events_to_record.append(f"-----\n")
 
+    if narrate_games:
+        scorecard_string = score.print_scorecard()
+        for score_line in scorecard_string:
+            print(score_line)
+
     scores.append(game_score)
 
 average_score = sum(scores) / NUM_GAMES
-print("average score = ", average_score)
-print("min score = ", min(scores))
-print("max score = ", max(scores))
-print(f"bonus happened {bonus_cnt} times")
-print(f"yum count = {yum_counter}")
-print(f"straight count = {straight_counter}")
-print(f"full count = {full_counter}")
-print(f"lo count = {lo_counter}")
-print(f"hi count = {hi_counter}")
-print(f"bad action 60 happened {bad_action_60_counter} times")
-print(f"straight score fails = {score_straight_fails}")
-print(f"full score fails = {score_full_fails}")
+
+if not narrate_games:
+    print("average score = ", average_score)
+    print("min score = ", min(scores))
+    print("max score = ", max(scores))
+    print(f"bonus happened {bonus_cnt} times")
+    print(f"yum count = {yum_counter}")
+    print(f"straight count = {straight_counter}")
+    print(f"full count = {full_counter}")
+    print(f"lo count = {lo_counter}")
+    print(f"hi count = {hi_counter}")
+    print(f"bad action 60 happened {bad_action_60_counter} times")
+    print(f"straight score fails = {score_straight_fails}")
+    print(f"full score fails = {score_full_fails}")
 
 if print_record_games:
     game_events_to_record.append(f"\nSummary: \n")
@@ -240,8 +302,11 @@ if print_record_games:
     with open("games.txt", "wt") as file_record_games:
         file_record_games.writelines(game_events_to_record)
 
+
+
 # Histogram
-np_scores = np.array(scores)
-num_bins = 30
-n, bins, patches = plt.hist(scores, density=True, bins=30)  #  num_bins, facecolor='blue', alpha=0.5)
-plt.show()
+if not narrate_games:
+    np_scores = np.array(scores)
+    num_bins = 30
+    n, bins, patches = plt.hist(scores, density=True, bins=30)  #  num_bins, facecolor='blue', alpha=0.5)
+    plt.show()
