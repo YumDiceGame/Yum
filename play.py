@@ -38,12 +38,12 @@ def french(category):
     return french_translation
 
 
-# with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
-with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
+with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
+# with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
-# with open("q_table_keeping_reduced.pickle", "rb") as keeping_q_table_file:
-with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
+with open("q_table_keeping_reduced.pickle", "rb") as keeping_q_table_file:
+# with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
     q_table_keeping = pickle.load(keeping_q_table_file)
 
 # Create q_table_scoring_rows
@@ -58,8 +58,8 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 
 # For saving games
 game_events_to_record = []
-print_record_games = False
-narrate_games = True
+print_record_games = True
+narrate_games = False
 roll_seq = False
 
 myDice = DiceSet()
@@ -124,19 +124,22 @@ for game_number in range(NUM_GAMES):
                     myDice.get_dict_as_vector() + score.get_available_cat_vector())
 
                 # Action
-                # first: add action 60 to mask if straight not avail
-                keeping_actions_mask = list(keep_action_mask_dict[myDice.as_short_string()])
-                # if not score.is_category_available('Straight'):
-                #     keeping_actions_mask[60] = 1
 
-                action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
-                                          keeping_actions_mask)).argmax()
+                # If using big keeping table:
+                # keeping_actions_mask = list(keep_action_mask_dict[myDice.as_short_string()])
+                # action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
+                # keeping_actions_mask)).argmax()
+                # action = (ma.masked_array(q_table_keeping[q_table_keeping_rows_index][0:NUM_KEEPING_ACTIONS],
+                #             keep_action_mask_dict[myDice.as_short_string()])).argmax()
+
                 # For the action, we are now using a 1D vector
-                # action = q_table_keeping[q_table_keeping_rows_index]
+                # So using q_table_keeping_reduced
+                action = q_table_keeping[q_table_keeping_rows_index]
 
                 if action == 60 and not score.is_category_available('Straight'):
                     bad_action_60_counter += 1
-
+                    if print_record_games:
+                        game_events_to_record.append(f" BAD ACTION 60 ")
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
 
@@ -200,12 +203,11 @@ for game_number in range(NUM_GAMES):
         q_table_scoring_rows_index = q_table_scoring_rows[0].index(myDice.get_dict_as_vector() + score.get_available_cat_vector())
 
         # this below if using the full size scoring q_table
-        category_scored = score.score_with_q_table(q_table_scoring, q_table_scoring_rows_index, myDice)
+        # category_scored = score.score_with_q_table(q_table_scoring, q_table_scoring_rows_index, myDice)
         # Now if using the reduced size scoring q_table
-
-        # category_scored = q_table_scoring[q_table_scoring_rows_index] + 1
+        category_scored = q_table_scoring[q_table_scoring_rows_index] + 1
         # print("cat scored = ", category_scored)
-        #  score.score_a_category(score_int_to_cat(category_scored), myDice)
+        score.score_a_category(score_int_to_cat(category_scored), myDice)
 
         if roll_seq:
             print(f"{myDice} category scored = {score_int_to_cat(category_scored)} category score = "

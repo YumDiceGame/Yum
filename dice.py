@@ -19,6 +19,27 @@ class DiceSet:
         self._masked_dict = {}  # for masking with available categories
         self._list_reroll = [True] * NUM_DICE
 
+    def list_to_dice_dict(self, in_list):
+        '''
+        Takes in a list that is meant to be a dice dict and creates a "real" dice dict
+        Used in q_table_reduction of all places
+        '''
+        list_dice = []
+        for d in range(in_list[0]):
+            list_dice.append(1)
+        for d in range(in_list[1]):
+            list_dice.append(2)
+        for d in range(in_list[2]):
+            list_dice.append(3)
+        for d in range(in_list[3]):
+            list_dice.append(4)
+        for d in range(in_list[4]):
+            list_dice.append(5)
+        for d in range(in_list[5]):
+            list_dice.append(6)
+        self._dice = list_dice
+        self.as_dict()
+
     def num_dice(self):
 
         return self._num_dice

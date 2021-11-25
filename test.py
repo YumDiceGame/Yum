@@ -51,3 +51,7 @@ print("mdc = ", myDice.max_die_count_for_available_category(myScore.get_availabl
 # print(myDice.get_list_reroll())
 # print(myDice.is_keep_all())
 # print([False] * NUM_DICE)
+
+myDice.list_to_dice_dict([0, 1, 1, 1, 1, 1])
+print(myDice)
+print(myDice.as_short_string())
