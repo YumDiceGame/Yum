@@ -5,24 +5,34 @@
 from score import *
 from constants import *
 import pickle
-import numpy as np
-from numpy import ma
 from do_q_table import do_q_table_rows
 from do_keep_action_q_table import action_q_table
-import matplotlib.pyplot as plt
 
-PRINT = False
+
+def action_to_dice(action):
+    if list_set_keep_actions[action] == set():
+        return set()
+    else:
+        return list_set_keep_actions[action]
+
 
 # Will want to see what the scoring q table would do
-# with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
 with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
+# Also want dice to keep recommendations
+with open("q_table_keeping_reduced.pickle", "rb") as keeping_q_table_file:
+    q_table_keeping = pickle.load(keeping_q_table_file)
 
 # This is to get the q table rows, needed for scoring q table
 # Create q_table_scoring_rows
 q_table_scoring_rows = do_q_table_rows()
 ref_action_table = action_q_table()
 list_all_dice_rolls = ref_action_table.do_list_of_dice_rolls()
+
+# Action q table:
+action_table = action_q_table()
+# Map action to dice to keep and action masks
+list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_table()
 
 myDice = DiceSet()
 
@@ -47,6 +57,10 @@ while not all_scored:
     print("initial roll")
     print(myDice)
 
+    q_table_keeping_rows_index = q_table_scoring_rows[0].index(  # don't worry q_table_scoring and keeping: same rows
+        myDice.get_dict_as_vector() + player_score.get_available_cat_vector())
+    print("Agent would keep dice ->", action_to_dice(q_table_keeping[q_table_keeping_rows_index]))
+
     for roll in range(1, NUM_ROLLS):
     # ask for list reroll
         input_valid = False
@@ -67,10 +81,15 @@ while not all_scored:
         print(f"roll number {myDice.get_num_rolls()}")
         print(f"dice = {myDice}")
 
-    # What would the score q table say (using reduced table):
+        if roll < NUM_ROLLS-1:
+            q_table_keeping_rows_index = q_table_scoring_rows[0].index(myDice.get_dict_as_vector() +
+                                                                   player_score.get_available_cat_vector())
+            print("Agent would keep dice ->", action_to_dice(q_table_keeping[q_table_keeping_rows_index]))
+
+    # What would the score q table say:
     q_table_scoring_rows_index = q_table_scoring_rows[0].index(myDice.get_dict_as_vector() + agent_score.get_available_cat_vector())
     q_table_would_score_category = q_table_scoring[q_table_scoring_rows_index] + 1
-    print("q table would score -> ", score_int_to_cat(q_table_would_score_category))
+    print("Agent would score -> ", score_int_to_cat(q_table_would_score_category))
     agent_score.score_a_category(score_int_to_cat(q_table_would_score_category), myDice)
 
     # ask user to score
@@ -110,3 +129,4 @@ agent = "Agent"
 print(f"Player{agent.rjust(29)}")
 for line in both_scorecards:
     print(f"{line[0]}{line[1].rjust(30)}")
+

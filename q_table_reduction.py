@@ -43,9 +43,9 @@ q_table_keeping_reduced = reduce_q_table(q_table_keeping, q_table_rows, False)
 with open("q_table_keeping_reduced.pickle", "wb") as f:
     pickle.dump(q_table_keeping_reduced, f)
 
-with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
-    q_table_scoring_straight = pickle.load(score_q_table_file)
-q_table_scoring_reduced = reduce_q_table(q_table_scoring_straight, q_table_rows, True)
-with open("q_table_scoring_reduced.pickle", "wb") as f:
-    pickle.dump(q_table_scoring_reduced, f)
+# with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
+#     q_table_scoring_straight = pickle.load(score_q_table_file)
+# q_table_scoring_reduced = reduce_q_table(q_table_scoring_straight, q_table_rows, True)
+# with open("q_table_scoring_reduced.pickle", "wb") as f:
+#     pickle.dump(q_table_scoring_reduced, f)
 
