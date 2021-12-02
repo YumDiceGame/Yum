@@ -23,6 +23,7 @@ class KeepingTrain:
         self.print = False
         self.trace_reward = False
 
+
     def print_cond(self, condition, item):
         if condition:
             print(item)
@@ -39,6 +40,8 @@ class KeepingTrain:
 
         track_average_score = 0
         track_score_array = np.zeros(6)
+        q_table_height = len(q_table_keeping)
+        q_table_track_max = np.zeros(q_table_height)
 
         # This is to follow the evolution of the scoring
         filename = f"score_track_progress_episodes_{NUM_EPISODES/1e6}M_LR_{learning_rate}_DIS_{discount}.txt"
@@ -300,17 +303,17 @@ class KeepingTrain:
                     f.write("\n")
             # Track scoring: how does it evolve over time <---
 
-            # if episode != 0 and episode % EVAL_Q_TABLE == 0:
-            #     # Evaluate q table
-            #     # compare the new q_table maxes to the previous ones
-            #     # and count the number of differences
-            #     count_diff_maxes = 0
-            #     for q_table_row in range (0, q_table_height):
-            #         # identify differences
-            #         if q_table_track_max[q_table_row] != q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax():
-            #             count_diff_maxes += 1
-            #         # update q_table_track_max for comparison next EVAL_Q_TABLE
-            #         q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
-            #     print(f"q_table_diff = {count_diff_maxes}\n")
-            #     with open("q_table_track_progress.txt", "a") as f:
-            #         f.write(f"{episode}\t{count_diff_maxes}\n")
+            if episode != 0 and episode % EVAL_Q_TABLE == 0:
+                # Evaluate q table
+                # compare the new q_table maxes to the previous ones
+                # and count the number of differences
+                count_diff_maxes = 0
+                for q_table_row in range(0, q_table_height):
+                    # identify differences
+                    if q_table_track_max[q_table_row] != q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax():
+                        count_diff_maxes += 1
+                    # update q_table_track_max for comparison next EVAL_Q_TABLE
+                    q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
+                print(f"q_table_diff = {count_diff_maxes}\n")
+                with open("q_table_track_progress.txt", "a") as f:
+                    f.write(f"{episode}\t{count_diff_maxes}\n")
