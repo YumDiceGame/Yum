@@ -23,7 +23,6 @@ class KeepingTrain:
         self.print = False
         self.trace_reward = False
 
-
     def print_cond(self, condition, item):
         if condition:
             print(item)
@@ -200,14 +199,6 @@ class KeepingTrain:
                             (len(action_to_dice_to_keep[action]) > 1):
                         reward += -100
 
-                    # if score.is_category_available('Yum'):
-                    #     if myDice.is_yum():
-                    #         pass
-                    #     elif almost_yum_list_per_roll[roll-2] and not almost_yum_list_per_roll[roll-1]:
-                    #         # we got further away from yum
-                    #         reward -= 40
-
-
                     potential_max_score_previous = potential_max_score
                     max_die_count_previous = max_die_count
 
@@ -224,9 +215,11 @@ class KeepingTrain:
                     # Moved to here so as to get some feedback for the learning
                     # Scoring with previously trained score q table
                     if roll == NUM_ROLLS:  # Last roll
-                        # q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
-                        #                                        list_all_dice_rolls, list_scoreable_categories)
-                        category_scored = self.score.score_with_q_table(q_table_scoring, new_state_index, self.dice)
+                        # with full size table
+                        # category_scored = self.score.score_with_q_table(q_table_scoring, new_state_index, self.dice)
+                        # with reduced:
+                        category_scored = q_table_scoring[new_state_index] + 1
+                        self.score.score_a_category(score_int_to_cat(category_scored), self.dice)
                         self.print_cond(self.trace_reward, f"cat scored {score_int_to_cat(category_scored)} "
                                     f"scored amount {self.score.get_category_score(score_int_to_cat(category_scored))}")
                         if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
@@ -247,16 +240,6 @@ class KeepingTrain:
                     # # Update Q table with new Q value
                     q_table_keeping[state_index][action] = new_q
 
-
-                # SCORE CATEGORY --->
-                # Scoring with previously trained score q table
-                # need to compute q_table_score index
-                # q_table_scoring_index = calc_row_index(self.dice.dice(), self.score.get_available_cat_vector(),
-                #                                        list_all_dice_rolls, list_scoreable_categories)
-                # category_scored = self.score.score_with_q_table(q_table_scoring, q_table_scoring_index, self.dice)
-
-                # SCORE CATEGORY <---
-
                 all_scored = self.score.all_scored()
 
             # Decaying is being done every episode if episode number is within decaying range
@@ -269,12 +252,10 @@ class KeepingTrain:
                 scorecard_string = self.score.print_scorecard()
                 for score_line in scorecard_string:
                     print(score_line)
-
                 print("epsilon = ", epsilon)
                 print("\n")
 
             # Track scoring: how does it evolve over time --->
-
             if (episode + NUM_GAMES_IN_LINE_EVAL - 1) % NUM_TRACK_SCORE == 0:
                 track_score = True
                 # we are going to set epsilon to 0 for the eval (table actions only matter)
