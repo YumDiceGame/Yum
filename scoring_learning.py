@@ -19,13 +19,13 @@ import random
 import os
 from do_q_table import do_q_table_rows
 import numpy as np
-import time
+from q_table_reduction import reduce_q_table
 
 do_epsilon = True
 Testing_Seq = False
 Use_prior_q_table = False
 Save_q_table = True
-Auto_shutdown = True
+Auto_shutdown = False
 PRINT = False
 PRINT_L2 = False
 track_diff = False
@@ -46,7 +46,7 @@ q_table_height = len(q_table_rows)  # this is 516096 !!!
 # see "do q_table.py" for info
 
 if Use_prior_q_table:
-    with open("q_table_scoring.pickle", "rb") as f:
+    with open("q_table_scoring.pickle", "rb") as f:  # MUST be the full size scoring table! (45M)
         q_table_scoring = pickle.load(f)
 else:
     q_table_scoring = np.random.uniform(low=0, high=1, size=(q_table_height, NUM_SCORE_CATEGORIES))
@@ -306,6 +306,11 @@ for episode in range(1, NUM_EPISODES):
 if Save_q_table:
     with open("q_table_scoring.pickle", "wb") as f:
         pickle.dump(q_table_scoring, f)
+
+# More importantly, convert to the reduced table (only 1M)
+q_table_scoring_reduced = reduce_q_table(q_table_scoring, q_table_rows, True)
+with open("q_table_scoring_reduced.pickle", "wb") as f:
+    pickle.dump(q_table_scoring_reduced, f)
 
 # If you want to train a long one and want to shutdown unattended
 if Auto_shutdown:

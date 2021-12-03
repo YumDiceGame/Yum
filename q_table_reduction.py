@@ -15,7 +15,7 @@ def reduce_q_table(q_table, q_table_row_indexes, score_table):
     We only need the max action
     '''
     q_table_reduced = []
-    q_table_rows_and_data = zip(q_table_row_indexes[0], q_table)  # q_table_rows is a tuple, want the first element [0]
+    q_table_rows_and_data = zip(q_table_row_indexes, q_table)  # q_table_rows is a tuple, want the first element [0]
     i = 0
     for row_index, q_table_row_data in q_table_rows_and_data:
         if score_table:  # we're doing the score_table
@@ -36,16 +36,25 @@ action_table = action_q_table()
 # Map action to dice to keep and action masks
 list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_table()
 
+# Uncomment if running q_table_reduction.py standalone
+# and you want to reduce in size the keeping table
+# But re-comment out immediately
+# Because this operation is called at the end of the keeping training
+#
+# with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
+#     q_table_keeping = pickle.load(keeping_q_table_file)
+# q_table_keeping_reduced = reduce_q_table(q_table_keeping, q_table_rows[0], False)
+# with open("q_table_keeping_reduced.pickle", "wb") as f:
+#     pickle.dump(q_table_keeping_reduced, f)
 
-with open("q_table_keeping.pickle", "rb") as keeping_q_table_file:
-    q_table_keeping = pickle.load(keeping_q_table_file)
-q_table_keeping_reduced = reduce_q_table(q_table_keeping, q_table_rows, False)
-with open("q_table_keeping_reduced.pickle", "wb") as f:
-    pickle.dump(q_table_keeping_reduced, f)
-
-# with open("q_table_scoring_straight.pickle", "rb") as score_q_table_file:
+# Uncomment if running q_table_reduction.py standalone
+# and you want to reduce in size the scoring table
+# But re-comment out immediately
+# Because this operation is called at the end of the keeping training
+#
+# with open("q_table_scoring.pickle", "rb") as score_q_table_file:
 #     q_table_scoring_straight = pickle.load(score_q_table_file)
-# q_table_scoring_reduced = reduce_q_table(q_table_scoring_straight, q_table_rows, True)
+# q_table_scoring_reduced = reduce_q_table(q_table_scoring_straight, q_table_rows[0], True)
 # with open("q_table_scoring_reduced.pickle", "wb") as f:
 #     pickle.dump(q_table_scoring_reduced, f)
 
