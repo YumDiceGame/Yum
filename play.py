@@ -1,6 +1,10 @@
 # Playing Yum game
 # with Q learning
 
+# to avoid error TERM environment not set:
+# check "Emulate terminal in output console" in
+# in Run/Debug configurations for "play"
+# https://stackoverflow.com/questions/38867520/term-environment-variable-not-set-on-python-code
 
 from score import *
 from constants import *
@@ -57,7 +61,8 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 # For saving games
 game_events_to_record = []
 print_record_games = True
-narrate_games = False
+narrate_games = True
+narrate_french = False
 roll_seq = False
 
 myDice = DiceSet()
@@ -87,7 +92,9 @@ for game_number in range(NUM_GAMES):
 
     score.reset_scores()
     all_scored = False
-    # full_score_failed = False
+
+    if narrate_games:
+        os.system('clear')
 
     while not all_scored:
 
@@ -108,8 +115,12 @@ for game_number in range(NUM_GAMES):
             game_events_to_record.append(f"\nTurn {turn}\n")
             game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
         if narrate_games:
-            print(f"Tour {turn}\n")
-            print(f"lancement numéro: {myDice.get_num_rolls()} dés: {myDice.dice()}")
+            if narrate_french:
+                print(f"Tour {turn}")
+                print(f"lancement numéro: {myDice.get_num_rolls()} dés: {myDice.dice()}")
+            else:
+                print(f"Turn {turn}")
+                print(f"Roll number: {myDice.get_num_rolls()} dice: {myDice.dice()}")
             input()
 
         if not roll_seq:
@@ -136,8 +147,8 @@ for game_number in range(NUM_GAMES):
 
                 if action == 60 and not score.is_category_available('Straight'):
                     bad_action_60_counter += 1
-                    if print_record_games:
-                        game_events_to_record.append(f" BAD ACTION 60 ")
+                    # if print_record_games:
+                    #     game_events_to_record.append(f" BAD ACTION 60 ")
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
 
@@ -145,48 +156,53 @@ for game_number in range(NUM_GAMES):
                 # Full override ... this should be done by training ... it was ok before, but now I have to override :/
                 if myDice.is_full() and score.is_category_available("Full"):
                     full_detected = True
-                    # myDice.set_list_reroll([False] * NUM_DICE)  # Forcing keep all dice when Full detected
                     # if print_record_games:
-                    #     game_events_to_record.append(f" pot max score = {score.get_potential_max_score(myDice)} ")
-                    if print_record_games:
-                        game_events_to_record.append(f" FULL DETECTED ")
+                    #     game_events_to_record.append(f" full detected ")
                 # also override for straight but that one is A LOT less of an issue ... like 4 or 5 per thou
                 if myDice.is_straight() and score.is_category_available("Straight"):
                     straight_detected = True
-                    # myDice.set_list_reroll([False] * NUM_DICE) -> don't need override, behavior is good, keep
-                    if print_record_games:
-                        game_events_to_record.append(f" STRAIGHT DETECTED ")
-                else:  # no Full override
-                    pass
+                    # if print_record_games:
+                    #     game_events_to_record.append(f" straight detected ")
                 myDice.roll_list_reroll()  # put in the else if you want override
 
                 if print_record_games:
                     # game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
-                    # if straight_detected:
-                    #     game_events_to_record.append(f"STRAIGHT DETECTED ")
-                    #     # straight_detected = False  # reset flag
-                    # if full_detected:
-                    #     game_events_to_record.append(f"FULL DETECTED ")
-                    #     # full_detected = False  # reset flag
                     if list_set_keep_actions[action] == empty_set:
-                        game_events_to_record.append(f" action {action} is keep none\n")
+                        game_events_to_record.append(f" keep no dice\n")
                     elif dice_set_before_reroll == list_set_keep_actions[action]:
-                        game_events_to_record.append(f" action {action} is keep all\n")
+                        game_events_to_record.append(f" keep all dice")
+                        break  # no need to keep going with more rolls
                     else:
-                        game_events_to_record.append(f" action {action} is {list_set_keep_actions[action]}\n")
+                        if list_set_keep_actions[action] == {'K4'}:
+                            game_events_to_record.append(f" keep four singletons\n")
+                        else:
+                            game_events_to_record.append(f" keep the {list_set_keep_actions[action]}\n")
                     game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
 
                 if narrate_games:
                     if list_set_keep_actions[action] == empty_set:
-                        print(f"Je garde aucun dé")
+                        if narrate_french:
+                            print(f"Je garde aucun dé")
+                        else:
+                            print(f"I keep no dice")
                         input()
                     elif dice_set_before_reroll == list_set_keep_actions[action]:
-                        print(f"Je garde tous les dés")
+                        if narrate_french:
+                            print(f"Je garde tous les dés")
+                        else:
+                            print(f"I keep all dice")
                         input()
+                        break  # no need to keep going with more rolls
                     else:
-                        print(f"Je garde les {list_set_keep_actions[action]}")
+                        if narrate_french:
+                            print(f"Je garde les {list_set_keep_actions[action]}")
+                        else:
+                            print(f"I keep the {list_set_keep_actions[action]}")
                         input()
-                    print(f"lancement numéro: {myDice.get_num_rolls()} dés: {myDice.dice()}")
+                    if narrate_french:
+                        print(f"lancement numéro: {myDice.get_num_rolls()} dés: {myDice.dice()}")
+                    else:
+                        print(f"Roll number: {myDice.get_num_rolls()} dice: {myDice.dice()}")
                     input()
 
         else:  # Rolling from a pre-programmed sequence
@@ -225,8 +241,12 @@ for game_number in range(NUM_GAMES):
                 score_full_fails += 1
 
         if narrate_games:
-            print(f"\nJe score {score.get_category_score(score_int_to_cat(category_scored))}"
-                  f" dans la catégorie {french(score_int_to_cat(category_scored))}\n")
+            if narrate_french:
+                print(f"Je score {score.get_category_score(score_int_to_cat(category_scored))}"
+                      f" dans la catégorie {french(score_int_to_cat(category_scored))}\n")
+            else:
+                print(f"I score {score.get_category_score(score_int_to_cat(category_scored))}"
+                      f" in category {score_int_to_cat(category_scored)}\n")
             input()
             scorecard_string = score.print_scorecard()
             for score_line in scorecard_string:
@@ -258,7 +278,7 @@ for game_number in range(NUM_GAMES):
     if print_record_games:
         game_events_to_record.append(f"\nTotal score for game {game_number+1} is {game_score}"
                                      f" bonus is {score.get_bonus()}\n")
-        game_events_to_record.append(f"-----\n")
+        game_events_to_record.append(f"-----\n\n")
 
     if narrate_games:
         scorecard_string = score.print_scorecard()
