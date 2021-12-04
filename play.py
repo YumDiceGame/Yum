@@ -61,7 +61,7 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 # For saving games
 game_events_to_record = []
 print_record_games = True
-narrate_games = True
+narrate_games = False
 narrate_french = False
 roll_seq = False
 
@@ -322,11 +322,9 @@ if print_record_games:
     with open("games.txt", "wt") as file_record_games:
         file_record_games.writelines(game_events_to_record)
 
-
-
 # Histogram
 if not narrate_games:
     np_scores = np.array(scores)
     num_bins = 30
-    n, bins, patches = plt.hist(scores, density=True, bins=30)  #  num_bins, facecolor='blue', alpha=0.5)
+    n, bins, patches = plt.hist(scores, density=True, bins=30)
     plt.show()
