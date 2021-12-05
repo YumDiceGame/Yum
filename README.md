@@ -3,7 +3,7 @@
 ##Instructions for setting up
 
 ###- Recommending to use Pycharm with Python 3.8
-###- Need to install numpy and matplotlib
+###- Need to install numpy, matplotlib, pickle and os.
 ###- Using GitHub as your VCS recommended but not mandatory
 
 ##Instructions for running
