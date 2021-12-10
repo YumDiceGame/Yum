@@ -80,6 +80,7 @@ class action_q_table(DiceSet):
                                     # add to dict of masks per rolls:
                                     # some stuff to translate the action mask string to something useable:
                                     action_mask_int = np.fromstring(action_mask, np.int8) - 48
+                                    write_file.write(f" {action_mask}\n")
                                     keep_action_mask_dict[self.as_short_string()] = action_mask_int
                                     row_number += 1
 
