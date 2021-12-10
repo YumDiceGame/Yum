@@ -61,8 +61,8 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 # For saving games
 game_events_to_record = []
 print_record_games = True
-narrate_games = False
-narrate_french = False
+narrate_games = True
+narrate_french = True
 roll_seq = False
 
 myDice = DiceSet()
@@ -75,10 +75,14 @@ straight_counter = 0
 full_counter = 0
 lo_counter = 0
 hi_counter = 0
-bad_action_60_counter = 0
+bad_action_K4_counter = 0
 empty_set = set()
 score_straight_fails = 0
 score_full_fails = 0
+
+# Interested in histogram of actions
+action_histo = np.zeros(len(list_set_keep_actions))
+total_actions = 0
 
 all_scored = False
 
@@ -144,9 +148,11 @@ for game_number in range(NUM_GAMES):
                 # For the action, we are now using a 1D vector
                 # So using q_table_keeping_reduced
                 action = q_table_keeping[q_table_keeping_rows_index]
+                action_histo[action] += 1
+                total_actions += 1
 
-                if action == 60 and not score.is_category_available('Straight'):
-                    bad_action_60_counter += 1
+                if list_set_keep_actions[action] == {'K4'} and not score.is_category_available('Straight'):
+                    bad_action_K4_counter += 1
                     # if print_record_games:
                     #     game_events_to_record.append(f" BAD ACTION 60 ")
                 # About to commit action to reroll
@@ -299,9 +305,9 @@ if not narrate_games:
     print(f"full count = {full_counter}")
     print(f"lo count = {lo_counter}")
     print(f"hi count = {hi_counter}")
-    print(f"bad action 60 happened {bad_action_60_counter} times")
-    print(f"straight score fails = {score_straight_fails}")
-    print(f"full score fails = {score_full_fails}")
+    # print(f"bad action 60 happened {bad_action_60_counter} times")
+    # print(f"straight score fails = {score_straight_fails}")
+    # print(f"full score fails = {score_full_fails}")
 
 if print_record_games:
     game_events_to_record.append(f"\nSummary: \n")
@@ -314,17 +320,33 @@ if print_record_games:
     game_events_to_record.append(f"full count = {full_counter}\n")
     game_events_to_record.append(f"lo count = {lo_counter}\n")
     game_events_to_record.append(f"hi count = {hi_counter}\n")
-    game_events_to_record.append(f"table action 60 happened {bad_action_60_counter} times\n")
-    game_events_to_record.append(f"straight score fails = {score_straight_fails}\n")
-    game_events_to_record.append(f"full score fails = {score_full_fails}\n")
+    # game_events_to_record.append(f"table action 60 happened {bad_action_60_counter} times\n")
+    # game_events_to_record.append(f"straight score fails = {score_straight_fails}\n")
+    # game_events_to_record.append(f"full score fails = {score_full_fails}\n")
 
 if print_record_games:
     with open("games.txt", "wt") as file_record_games:
         file_record_games.writelines(game_events_to_record)
 
-# Histogram
+# Histogram of games
 if not narrate_games:
     np_scores = np.array(scores)
     num_bins = 30
     n, bins, patches = plt.hist(scores, density=True, bins=30)
+    plt.show()
+
+# Histogram of actions
+i=0
+action_histo = action_histo/total_actions
+cumulative_sum = 0
+for action_percentage in action_histo:
+    cumulative_sum += action_percentage
+    print(f"{i}, {100*action_percentage:.2f}, {list_set_keep_actions[i]}")
+    i = i+1
+# Sum is 1?
+print("cumulative_sum = ", cumulative_sum)
+
+if not narrate_games:
+    plt.plot(action_histo)
+    # n, bins, patches = plt.hist(action_histo, density=True, bins=NUM_KEEPING_ACTIONS+1)
     plt.show()
