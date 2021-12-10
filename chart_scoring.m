@@ -47,4 +47,4 @@ title("yum")
 subplot(3, 3, 8)
 plot(data2(:,1), data2(:,2))
 grid on
-##title("epsilon")
+title("epsilon")
