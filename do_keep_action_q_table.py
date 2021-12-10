@@ -81,7 +81,6 @@ class action_q_table(DiceSet):
                                     # some stuff to translate the action mask string to something useable:
                                     action_mask_int = np.fromstring(action_mask, np.int8) - 48
                                     keep_action_mask_dict[self.as_short_string()] = action_mask_int
-                                    write_file.write(f" {action_mask}\n")
                                     row_number += 1
 
         return self.list_set_keep_actions, keep_action_mask_dict

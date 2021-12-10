@@ -131,6 +131,8 @@ class KeepingTrain:
                     if not self.score.is_above_the_line_all_scored():
                         max_die_count, face_max_die_count = self.dice.max_die_count_for_available_category(
                             self.score.get_available_cat_vector())
+                    else:  # might remove this else
+                        max_die_count = 0
 
                     potential_max_score, potential_max_score_category = self.score.get_potential_max_score(self.dice)
                     self.print_cond(self.trace_reward, f"pot max score = {potential_max_score}, "
@@ -185,8 +187,8 @@ class KeepingTrain:
                     # Punish bad keep all actions
                     if self.dice.is_keep_all() and potential_max_score < 21:
                         reward += -100
-                    if action == 60:
-                        # Punish bad K4 action (bad meaning Straight isn't avail but we are doing action 60
+                    if action_to_dice_to_keep[action] == {'K4'}:
+                        # Punish bad K4 action (bad meaning Straight isn't avail but we are doing action K4
                         if not self.score.is_category_available('Straight'):
                             reward += -100
                         # Also punish the following case: is your action 60 pair is in an available above the line
@@ -284,17 +286,17 @@ class KeepingTrain:
                     f.write("\n")
             # Track scoring: how does it evolve over time <---
 
-            if episode != 0 and episode % EVAL_Q_TABLE == 0:
-                # Evaluate q table
-                # compare the new q_table maxes to the previous ones
-                # and count the number of differences
-                count_diff_maxes = 0
-                for q_table_row in range(0, q_table_height):
-                    # identify differences
-                    if q_table_track_max[q_table_row] != q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax():
-                        count_diff_maxes += 1
-                    # update q_table_track_max for comparison next EVAL_Q_TABLE
-                    q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
-                print(f"q_table_diff = {count_diff_maxes}\n")
-                with open("q_table_track_progress.txt", "a") as f:
-                    f.write(f"{episode}\t{count_diff_maxes}\n")
+            # if episode != 0 and episode % EVAL_Q_TABLE == 0:
+            #     # Evaluate q table
+            #     # compare the new q_table maxes to the previous ones
+            #     # and count the number of differences
+            #     count_diff_maxes = 0
+            #     for q_table_row in range(0, q_table_height):
+            #         # identify differences
+            #         if q_table_track_max[q_table_row] != q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax():
+            #             count_diff_maxes += 1
+            #         # update q_table_track_max for comparison next EVAL_Q_TABLE
+            #         q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
+            #     print(f"q_table_diff = {count_diff_maxes}\n")
+            #     with open("q_table_track_progress.txt", "a") as f:
+            #         f.write(f"{episode}\t{count_diff_maxes}\n")
