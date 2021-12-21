@@ -67,11 +67,12 @@ class KeepingTrain:
                 # for tracking when you have almost straight, full or yum
                 almost_straight_list_per_roll = []
                 almost_full_list_per_roll = []
-                # almost_yum_list_per_roll = []
+                # list of rolls too
+                list_of_rolls = []
 
                 almost_straight_list_per_roll.append(self.dice.is_almost_straight())
                 almost_full_list_per_roll.append(self.dice.is_almost_full())
-                # almost_yum_list_per_roll.append(self.dice.is_almost_yum())
+                list_of_rolls.append(self.dice.as_short_string())
 
                 potential_max_score_previous, potential_max_score_category_previous = \
                     self.score.get_potential_max_score(self.dice)
@@ -79,7 +80,6 @@ class KeepingTrain:
                                                    f"initial pot max cat = {potential_max_score_category_previous}")
 
                 for roll in range(2, NUM_ROLLS + 1):
-
 
                     # STATE DEFINITION --->
                     # The state now is a concatenation of the dice dict and scored cats
@@ -106,7 +106,7 @@ class KeepingTrain:
                     # for tracking when you have almost straight full or yum
                     almost_straight_list_per_roll.append(self.dice.is_almost_straight())
                     almost_full_list_per_roll.append(self.dice.is_almost_full())
-                    # almost_yum_list_per_roll.append(self.dice.is_almost_yum())
+                    list_of_rolls.append(self.dice.as_short_string())
 
                     self.print_cond(self.trace_reward, f"action {action} "
                                                        f" list re-roll {self.dice.get_list_reroll()}"
@@ -153,7 +153,8 @@ class KeepingTrain:
                         self.print_cond(self.trace_reward, f"reward 21 30 = {reward}")
                     elif potential_max_score > potential_max_score_previous:
                         reward = 5
-                        self.print_cond(self.trace_reward, f"reward potential_max_score > potential_max_score_previous = {reward}")
+                        self.print_cond(self.trace_reward,
+                                        f"reward potential_max_score > potential_max_score_previous = {reward}")
                     elif potential_max_score_previous > potential_max_score:
                         if potential_max_score_previous >= (potential_max_score+25):
                             reward = -20
@@ -172,18 +173,25 @@ class KeepingTrain:
                             self.print_cond(self.trace_reward,
                                             f"stuck at zero reward = {reward}")
 
-                    # Stuff for encouraging to try straight or full
-                    if self.score.is_category_available('Straight') and not self.dice.is_straight() and potential_max_score < 21:
-                        if almost_straight_list_per_roll[roll-2] and not almost_straight_list_per_roll[roll-1]:
-                            # we got further away from straight
-                            reward += -10  # += to hedge your bets was -2.5
-                            self.print_cond(self.trace_reward, f"straight punishment = {reward}")
+                    # For encouraging to try straight
+                    if self.score.is_category_available('Straight'):
+                        if potential_max_score < 20:  # was < 21 !!
+                            if not self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
+                                    not almost_straight_list_per_roll[roll-1]:
+                                reward -= 200
+                        elif self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
+                                (self.dice.dice_difference(list_of_rolls[roll-1], list_of_rolls[roll-2]) == 2):
+                            reward += 250
+
+                    # For encouraging Full - not sure it's working
                     if self.score.is_category_available('Full') and not self.dice.is_full() and potential_max_score < 21:
                         if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
                             # we got further away from full
                             reward += -15  # += to hedge your bets was -3.5
                             self.print_cond(self.trace_reward, f"full punishment = {reward}")
 
+                    # "Cheat zone"
+                    # Correlating rewards with actions ... not ideal but it works
                     # Punish bad keep all actions
                     if self.dice.is_keep_all() and potential_max_score < 21:
                         reward += -100

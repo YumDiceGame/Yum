@@ -16,10 +16,11 @@ from q_table_reduction import reduce_q_table
 do_epsilon = True
 Use_prior_q_table = False
 Save_q_table = True
-Auto_shutdown = False
+Auto_shutdown = True
 
 # Load scoring q table (reduced one ok):
-with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
+# 12/19/2021 8M training: using the "biased_to_full" scoring table
+with open("q_table_scoring_reduced_biased_to_full.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
 # Create q_table_scoring_rows

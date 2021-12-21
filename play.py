@@ -42,7 +42,8 @@ def french(category):
     return french_translation
 
 
-with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
+# in "play", using the biased to straight scoring table
+with open("q_table_scoring_reduced_biased_to_straight.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
 with open("q_table_keeping_reduced.pickle", "rb") as keeping_q_table_file:
@@ -61,7 +62,7 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 # For saving games
 game_events_to_record = []
 print_record_games = True
-narrate_games = True
+narrate_games = False
 narrate_french = True
 roll_seq = False
 

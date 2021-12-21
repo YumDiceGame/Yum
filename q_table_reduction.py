@@ -52,9 +52,9 @@ list_set_keep_actions, keep_action_mask_dict = action_table.print_all_action_q_t
 # But re-comment out immediately
 # Because this operation is called at the end of the keeping training
 #
-# with open("q_table_scoring.pickle", "rb") as score_q_table_file:
-#     q_table_scoring_straight = pickle.load(score_q_table_file)
-# q_table_scoring_reduced = reduce_q_table(q_table_scoring_straight, q_table_rows[0], True)
-# with open("q_table_scoring_reduced.pickle", "wb") as f:
+# with open("q_table_scoring_biased_to_full.pickle", "rb") as score_q_table_file:
+#     q_table_scoring = pickle.load(score_q_table_file)
+# q_table_scoring_reduced = reduce_q_table(q_table_scoring, q_table_rows[0], True)
+# with open("q_table_scoring_reduced_biased_to_full.pickle", "wb") as f:
 #     pickle.dump(q_table_scoring_reduced, f)
 

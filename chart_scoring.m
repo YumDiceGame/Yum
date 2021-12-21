@@ -1,4 +1,6 @@
-data = dlmread("./PycharmProjects/Yum/score_track_progress_episodes_25.0M_LR_0.15_DIS_0.85_clean.txt");
+data = dlmread("./PycharmProjects/Yum/score_track_progress_episodes_8.0M_LR_0.15_DIS_0.85.txt");
+# data = dlmread("./PycharmProjects/Yum/score_track_progress_episodes_8.0M_LR_0.15_DIS_0.85_straight.txt");
+# data = dlmread("./PycharmProjects/Q_tables_and_backups/score_track_progress_episodes_8.0M_LR_0.15_DIS_0.85_clean.txt");
 data2 = data(2:end,:);
 wdw_sz = 10
 figure(1, 'position', [250, 250, 1250, 1000])
