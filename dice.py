@@ -475,3 +475,26 @@ class DiceSet:
             possible_max_score = [0, category_index]
         return possible_max_score
 
+    def dice_difference(self, roll1, roll2):
+        '''
+        By "how much" two dice hands are different.
+        What I have in mind is to identify two hands that differ by more than one die
+        (for the Straight training)
+        roll arguments are short string
+        '''
+        roll2_init = roll2
+        diff1 = 0
+
+        for d in roll1:
+            if d in roll2:
+                roll2 = roll2.replace(d, '', 1)
+            diff1 = len(roll2)
+        # This second part is probably redundant
+        diff2 = 0
+        roll2 = roll2_init
+        for d in roll2:
+            if d in roll1:
+                roll1 = roll1.replace(d, '', 1)
+            diff2 = len(roll1)
+
+        return diff1 + diff2
