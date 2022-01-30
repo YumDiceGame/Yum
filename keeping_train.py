@@ -52,6 +52,7 @@ class KeepingTrain:
             turn = 0
             self.score.reset_scores()
             all_scored = False
+            #cumulative_score = 0
 
             while not all_scored:
                 turn += 1
@@ -174,24 +175,29 @@ class KeepingTrain:
                                             f"stuck at zero reward = {reward}")
 
                     # For encouraging to try straight
-                    if self.score.is_category_available('Straight'):
-                        if potential_max_score < 20:  # was < 21 !!
-                            if not self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
-                                    not almost_straight_list_per_roll[roll-1]:
-                                reward -= 200
-                        elif self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
-                                (self.dice.dice_difference(list_of_rolls[roll-1], list_of_rolls[roll-2]) == 2):
-                            reward += 250
+                    # if self.score.is_category_available('Straight'):
+                    #     if potential_max_score < 20:  # was < 21 !!
+                    #         if not self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
+                    #                 not almost_straight_list_per_roll[roll-1]:
+                    #             reward -= 200
+                    #     elif self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
+                    #             (DiceSet.dice_difference(list_of_rolls[roll-1], list_of_rolls[roll-2]) == 1):
+                    #         reward += 150
 
                     # For encouraging Full - not sure it's working
-                    if self.score.is_category_available('Full') and not self.dice.is_full() and potential_max_score < 21:
-                        if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
-                            # we got further away from full
-                            reward += -15  # += to hedge your bets was -3.5
-                            self.print_cond(self.trace_reward, f"full punishment = {reward}")
+                    # if self.score.is_category_available('Full') and not self.dice.is_full() and potential_max_score < 21:
+                    #     if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
+                    #         # we got further away from full
+                    #         reward += -15  # += to hedge your bets was -3.5
+                    #         self.print_cond(self.trace_reward, f"full punishment = {reward}")
 
-                    # "Cheat zone"
+                    # "Heuristics" zone
                     # Correlating rewards with actions ... not ideal but it works
+                    # Punish bad keep all actions
+                    # the below emulates bad keep all AND bad K4 ... maybe
+                    # if (DiceSet.dice_difference(list_of_rolls[roll-1], list_of_rolls[roll-2]) <= 1) and \
+                    #         potential_max_score < 20 and potential_max_score_previous < 20:
+                    #     reward += -250  # got 9/1775 bad keep alls with this, about the same as when corr. to action
                     # Punish bad keep all actions
                     if self.dice.is_keep_all() and potential_max_score < 21:
                         reward += -100
@@ -232,6 +238,7 @@ class KeepingTrain:
                         self.score.score_a_category(score_int_to_cat(category_scored), self.dice)
                         self.print_cond(self.trace_reward, f"cat scored {score_int_to_cat(category_scored)} "
                                     f"scored amount {self.score.get_category_score(score_int_to_cat(category_scored))}")
+                        # cumulative_score += self.score.get_category_score(score_int_to_cat(category_scored))
                         if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
                             # penalty for anything less than 5 of a kind
                             penalty = 5 * (NUM_DICE - (self.score.get_category_score(score_int_to_cat(category_scored)) / category_scored))
@@ -245,7 +252,8 @@ class KeepingTrain:
 
                     current_q = q_table_keeping[state_index][action]
 
-                    new_q = (1 - learning_rate) * current_q + learning_rate * (reward + discount * max_future_q)
+                    new_q = (1 - learning_rate) * current_q + learning_rate * \
+                            (reward + discount * max_future_q)
                     #
                     # # Update Q table with new Q value
                     q_table_keeping[state_index][action] = new_q

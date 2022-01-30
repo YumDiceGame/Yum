@@ -42,8 +42,8 @@ def french(category):
     return french_translation
 
 
-# in "play", using the biased to straight scoring table
-with open("q_table_scoring_reduced_biased_to_straight.pickle", "rb") as score_q_table_file:
+# in "play", using the biased to full scoring table
+with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
 with open("q_table_keeping_reduced.pickle", "rb") as keeping_q_table_file:
@@ -152,6 +152,8 @@ for game_number in range(NUM_GAMES):
                 action_histo[action] += 1
                 total_actions += 1
 
+                kept_all = False
+
                 if list_set_keep_actions[action] == {'K4'} and not score.is_category_available('Straight'):
                     bad_action_K4_counter += 1
                     # if print_record_games:
@@ -178,6 +180,7 @@ for game_number in range(NUM_GAMES):
                         game_events_to_record.append(f" keep no dice\n")
                     elif dice_set_before_reroll == list_set_keep_actions[action]:
                         game_events_to_record.append(f" keep all dice")
+                        kept_all = True
                         break  # no need to keep going with more rolls
                     else:
                         if list_set_keep_actions[action] == {'K4'}:
@@ -246,6 +249,8 @@ for game_number in range(NUM_GAMES):
                 # full_detected = False  # reset flag
                 # full_score_failed = True
                 score_full_fails += 1
+            if kept_all and score.get_category_score(score_int_to_cat(category_scored)) == 0:
+                game_events_to_record.append(f"Bad keep all\n")
 
         if narrate_games:
             if narrate_french:
