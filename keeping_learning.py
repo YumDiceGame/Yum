@@ -1,4 +1,4 @@
-# Playing Yum game above the line only (1's through 6's)
+# Playing Yum game
 # with Q learning
 
 
@@ -6,7 +6,6 @@ import os
 import pickle
 import numpy as np
 
-from constants import *
 from do_keep_action_q_table import action_q_table
 from do_q_table import do_q_table_rows
 from score import *
@@ -16,7 +15,7 @@ from q_table_reduction import reduce_q_table
 do_epsilon = True
 Use_prior_q_table = False
 Save_q_table = True
-Auto_shutdown = True
+Auto_shutdown = False
 
 # Load scoring q table (reduced one ok):
 # 12/19/2021 8M training: using the "biased_to_full" scoring table
@@ -81,7 +80,6 @@ if Save_q_table:
 q_table_keeping_reduced = reduce_q_table(q_table_keeping, q_table_scoring_rows, False)
 with open("q_table_keeping_reduced.pickle", "wb") as f:
     pickle.dump(q_table_keeping_reduced, f)
-
 
 # If you want to train a long one and want to shutdown unattended
 if Auto_shutdown:
