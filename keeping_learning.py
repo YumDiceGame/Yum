@@ -13,9 +13,10 @@ from keeping_train import KeepingTrain
 from q_table_reduction import reduce_q_table
 
 do_epsilon = True
+decrease_learning_rate = True
 Use_prior_q_table = False
 Save_q_table = True
-Auto_shutdown = False
+Auto_shutdown = True
 
 # Load scoring q table (reduced one ok):
 # 12/19/2021 8M training: using the "biased_to_full" scoring table
@@ -57,8 +58,8 @@ track_score_array = np.zeros(6)
 
 keeping_train = KeepingTrain()
 
-learning_rates = [15]  # list(range(20, 80, 20))
-discounts = [85]  # list(range(40, 100, 20))
+learning_rates = [50]  # list(range(20, 80, 20))
+discounts = [70]  # list(range(40, 100, 20))
 
 for learning_rate in learning_rates:
     for discount in discounts:
@@ -69,17 +70,17 @@ for learning_rate in learning_rates:
             q_table_keeping = np.random.uniform(low=0, high=1, size=(q_table_height, NUM_KEEPING_ACTIONS))
         print(f"LR = {learning_rate/100} DIS = {discount/100}")
         keeping_train.train(q_table_scoring, q_table_keeping, list_all_dice_rolls, list_scoreable_categories,
-                            keeping_actions_masks, action_to_dice_to_keep, learning_rate/100, discount/100, do_epsilon)
+                            keeping_actions_masks, action_to_dice_to_keep, learning_rate/100, discount/100,
+                            do_epsilon, decrease_learning_rate)
 
 # Save q table
 if Save_q_table:
     with open("q_table_keeping.pickle", "wb") as f:
         pickle.dump(q_table_keeping, f)
-
-# More importantly, convert to the reduced table (only 1M)
-q_table_keeping_reduced = reduce_q_table(q_table_keeping, q_table_scoring_rows, False)
-with open("q_table_keeping_reduced.pickle", "wb") as f:
-    pickle.dump(q_table_keeping_reduced, f)
+    # More importantly, convert to the reduced table (only 1M)
+    q_table_keeping_reduced = reduce_q_table(q_table_keeping, q_table_scoring_rows, False)
+    with open("q_table_keeping_reduced.pickle", "wb") as f:
+        pickle.dump(q_table_keeping_reduced, f)
 
 # If you want to train a long one and want to shutdown unattended
 if Auto_shutdown:

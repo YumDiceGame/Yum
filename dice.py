@@ -99,6 +99,15 @@ class DiceSet:
         self._dice = sorted(self._dice)
         self.as_dict()
 
+    def roll_Triplet_Naive(self):
+        # Rolls 3 of a kind, but could end up 4 of a kind or even Yum
+        rand_1 = np.random.randint(1, NUM_DIE_FACES+1)
+        rand_2 = np.random.randint(1, NUM_DIE_FACES+1)
+        rand_3 = np.random.randint(1, NUM_DIE_FACES+1)
+        self._dice = [rand_1, rand_1, rand_1, rand_2, rand_3]
+        self._dice = sorted(self._dice)
+        self.as_dict()
+
     def roll_Heavy(self):
         # slants the roll towards high values
         for i in range(0, NUM_DICE):
