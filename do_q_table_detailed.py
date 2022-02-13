@@ -1,23 +1,58 @@
+import re
 from constants import *
 from dice import DiceSet
-import numpy as np
+from score import *
+import pickle
 
-myDice = DiceSet()
+# two different styles of writing the file
+reference_style = 0
+tracking_style = 1
+
+dice = DiceSet()
 set_of_dice = set()
-# set_of_dice_rolls = set()
 
+def scoreable_categories_string(in_list):
+    # just take the score vector and translate to string
+    # show only the available categories
+    score_full_string = '123456YSFLH'
+    i=0
+    out_str = ""
+    for score_bit in in_list:
+        if score_bit == 0:
+            out_str += score_full_string[i]
+        i += 1
+    return out_str
+
+# let's get the row visitation data that occurred during training
+if tracking_style:
+    # how many visits
+    q_table_row_visit = []
+    # And see how often it changed
+    q_table_row_max_changes = []
+    # streak w/o change
+    q_table_row_streak = []
+    # read those three above from file
+    with open("q_table_row_visit.txt", "r") as f:
+        while line := f.readline():
+            m = re.search('(\d+)\t(\d+)\t(\d+)', line)
+            q_table_row_visit.append(m.group(1))
+            q_table_row_max_changes.append(m.group(2))
+            q_table_row_streak.append(m.group(3))
+    # Include also winning action
+    with open("q_table_keeping_reduced.pickle", "rb") as f:
+        q_table_keeping_reduced = pickle.load(f)
 
 for d1 in range(1, NUM_DIE_FACES+1):
     for d2 in range(1, NUM_DIE_FACES + 1):
         for d3 in range(1, NUM_DIE_FACES + 1):
             for d4 in range(1, NUM_DIE_FACES + 1):
                 for d5 in range(1, NUM_DIE_FACES + 1):
-                    myDice.set([d1, d2, d3, d4, d5])
-                    myDice.get_dict()
+                    dice.set([d1, d2, d3, d4, d5])
+                    dice.get_dict()
                     # do a tuple, because we need a set
                     # because we need to count unique combinations
                     # of quantities
-                    dice_tuple = tuple(myDice.get_dict_as_vector())
+                    dice_tuple = tuple(dice.get_dict_as_vector())
                     set_of_dice.add(dice_tuple)
 
 
@@ -93,7 +128,11 @@ with open("scoreable_categories.txt", "w") as write_file:
 q_table_rows = []
 for i in range(0, len(list_of_die_face_counts)):
     for j in range(0, len(scoreable_categories)):
-        q_table_rows.append(list_of_die_face_counts[i] + scoreable_categories[j])
+        if reference_style:
+            q_table_rows.append(list_of_die_face_counts[i] + scoreable_categories[j])
+        elif tracking_style:
+            dice.list_to_dice_dict(list_of_die_face_counts[i])
+            q_table_rows.append(dice._dice + list(scoreable_categories_string(scoreable_categories[j])))
 
 # We can access a particular row (this will be important):
 # print("example accessed row 0 0 3 0 2 0 0 1 1 1 1 0 0 number = ",
@@ -102,20 +141,33 @@ for i in range(0, len(list_of_die_face_counts)):
 # for reference, let's also print this one too
 # might be useful
 row_number = 0
-with open("q_table_rows.txt", "w") as write_file:
-    for row in q_table_rows:
-        if row_number % 45 == 0:
-            if row_number != 0:
-                write_file.write('\n')
-            # header: how many 1's, 2's, ... AND score the 1's, 2's, (7 is Yum) ... and then row number
-            write_file.write("1 2 3 4 5 6 1 2 3 4 5 6 Y S F L H row\n")
-            write_file.write("-------------------------------------\n")
-        # the below strips '[', ']' and also the comma
-        # (can't use "strip" for the comma)
-        row_to_write = (str(row).strip('[]')).replace(',', '') + " " + str(row_number)
-        write_file.write(row_to_write)
-        write_file.write('\n')
-        row_number += 1
+
+if reference_style:
+    with open("q_table_rows.txt", "w") as write_file:
+        for row in q_table_rows:
+            if row_number % 45 == 0:
+                if row_number != 0:
+                    write_file.write('\n')
+                write_file.write("1 2 3 4 5 6 1 2 3 4 5 6 Y S F L H row\n")
+                write_file.write('-------------------------------------\n')
+            row_to_write = (str(row).strip('[]')).replace(',', '') + " " + str(row_number)
+            write_file.write(row_to_write)
+            write_file.write('\n')
+            row_number += 1
+
+elif tracking_style:
+    with open("q_table_rows.txt", "w") as write_file:
+        for row, row_visit, row_change, row_streak, action in zip(q_table_rows, q_table_row_visit,
+                                                                  q_table_row_max_changes, q_table_row_streak,
+                                                                  q_table_keeping_reduced):
+            short_row = str(row).strip('[]').replace("'", '').replace(',', '').replace(' ', '')
+            row_to_write = str(row_number).rjust(7) + " " + short_row[0:NUM_DICE] + " " + \
+                           short_row[NUM_DICE:].rjust(13) + " " + str(row_visit).rjust(6) + " " + \
+                           str(row_change).rjust(5) + " " + str(row_streak).rjust(5) + " " + str(action)
+            write_file.write(row_to_write)
+            write_file.write('\n')
+            row_number += 1
+
 
 
 

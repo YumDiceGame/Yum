@@ -257,6 +257,13 @@ class Score:
                 list_avail_cats.append(score_cat_to_char(cat))
         print(list_avail_cats)
 
+    def get_available_categories_as_short_string(self):
+        str_avail_cats = ''
+        for cat in self._scores:
+            if not self._scores[cat][0]:
+                str_avail_cats += score_cat_to_char(cat)
+        return str_avail_cats
+
     def available_cat(self):
         available_categories = []
         for cat in self._scores:
@@ -274,6 +281,12 @@ class Score:
                 # This returns a "1" meaning scored (not available)
                 available_categories_vector.append(1)
         return available_categories_vector
+
+    @staticmethod
+    def category_scored_one_hot(category_scored):
+        cat_scored_one_hot = [0] * NUM_SCORE_CATEGORIES
+        cat_scored_one_hot[category_scored-1] = 1
+        return cat_scored_one_hot
 
     def is_above_the_line_all_scored(self):
         available_categories_vector_above_line = self.get_available_cat_vector()[0:NUM_SCORE_CAT_ABOVE_LINE]

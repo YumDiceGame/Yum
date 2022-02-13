@@ -15,6 +15,7 @@ from do_q_table import do_q_table_rows
 from do_keep_action_q_table import action_q_table
 import matplotlib.pyplot as plt
 import os
+import re
 
 def french(category):
     if category == 'Ones':
@@ -48,6 +49,11 @@ with open("q_table_scoring_reduced.pickle", "rb") as score_q_table_file:
 
 with open("q_table_keeping_reduced.pickle", "rb") as keeping_q_table_file:
     q_table_keeping = pickle.load(keeping_q_table_file)
+
+# for score data, create new empty file
+with open("score_data.txt", "w") as score_data_file_header:
+    score_data_file_header.write("1 2 3 4 5 6 1 2 3 4 5 6 Y S F L H 1 2 3 4 5 6 Y S F L H")
+    score_data_file_header.write('\n')
 
 # Create q_table_scoring_rows
 q_table_scoring_rows = do_q_table_rows()
@@ -177,16 +183,18 @@ for game_number in range(NUM_GAMES):
                 if print_record_games:
                     # game_events_to_record.append(f"row = {q_table_keeping_rows_index} ")
                     if list_set_keep_actions[action] == empty_set:
-                        game_events_to_record.append(f" keep no dice\n")
+                        game_events_to_record.append(f" keep no dice")
                     elif dice_set_before_reroll == list_set_keep_actions[action]:
                         game_events_to_record.append(f" keep all dice")
                         kept_all = True
+                        game_events_to_record.append(f" row {q_table_keeping_rows_index}\n")
                         break  # no need to keep going with more rolls
                     else:
                         if list_set_keep_actions[action] == {'K4'}:
-                            game_events_to_record.append(f" keep four singletons\n")
+                            game_events_to_record.append(f" keep four singletons")
                         else:
-                            game_events_to_record.append(f" keep the {list_set_keep_actions[action]}\n")
+                            game_events_to_record.append(f" keep the {list_set_keep_actions[action]}")
+                    game_events_to_record.append(f" row {q_table_keeping_rows_index}\n")
                     game_events_to_record.append(f"roll {myDice.get_num_rolls()} dice {myDice.dice()}")
 
                 if narrate_games:
@@ -225,12 +233,18 @@ for game_number in range(NUM_GAMES):
         # need to compute q_table_score index
         # hey below whys q_table_scoring_rows[0] -> it's ok!
         q_table_scoring_rows_index = q_table_scoring_rows[0].index(myDice.get_dict_as_vector() + score.get_available_cat_vector())
-
+        #score_data = [myDice.get_dict_as_vector(), score.get_available_cat_vector()]
         # this below if using the full size scoring q_table
         # category_scored = score.score_with_q_table(q_table_scoring, q_table_scoring_rows_index, myDice)
         # Now if using the reduced size scoring q_table
         category_scored = q_table_scoring[q_table_scoring_rows_index] + 1
-        # print("cat scored = ", category_scored)
+        # score_data.append(score.category_scored_one_hot(category_scored))
+        # # the below is for writing the score data to file:
+        # with open("score_data.txt", "a") as score_data_file:
+        #     score_data_string = re.sub(r'[\[,\]]', '', str(score_data))
+        #     score_data_string += '\n'
+        #     score_data_file.write(score_data_string)
+
         score.score_a_category(score_int_to_cat(category_scored), myDice)
 
         if roll_seq:

@@ -3,7 +3,7 @@
 import random
 from dice import *
 from score import *
-
+from utilities import *
 
 def calc_row_index(dice, available_categories, list_all_dice_rolls, list_scoreable_categories):
     # We calculate the row index fairly often ...
@@ -19,6 +19,7 @@ class KeepingTrain:
         self.dice = DiceSet()
         self.score = Score()
         self.epsilon_decay_value = 0
+        self.learning_rate_decay_value = 0
         self.track_score = True
         self.print = False
         self.trace_reward = False
@@ -28,7 +29,8 @@ class KeepingTrain:
             print(item)
 
     def train(self, q_table_scoring, q_table_keeping, list_all_dice_rolls, list_scoreable_categories,
-              keeping_actions_masks, action_to_dice_to_keep, learning_rate, discount, do_epsilon):
+              keeping_actions_masks, action_to_dice_to_keep, learning_rate_init, discount,
+              do_epsilon, decrease_learning_rate):
 
         if do_epsilon:
             epsilon = 1
@@ -37,15 +39,31 @@ class KeepingTrain:
             # Set epsilon to 0
             epsilon = 0
 
+        # We are going to decrease the LR:
+        # Initial LR is the one passed in as "learning_rate"
+        learning_rate = learning_rate_init
+        if decrease_learning_rate:
+            learning_rate_final = 0.05  # Somewhat arbitrary
+            self.learning_rate_decay_value = (learning_rate_init-learning_rate_final) / (END_EPSILON_DECAYING - START_EPSILON_DECAYING)
+        else:
+            self.learning_rate_decay_value = 0
+
         track_average_score = 0
         track_score_array = np.zeros(6)
         q_table_height = len(q_table_keeping)
         q_table_track_max = np.zeros(q_table_height)
 
+        # We want to track how many times each row is visited
+        q_table_row_visit = np.zeros(q_table_height, dtype=int)
+        # And see how often it changed
+        q_table_row_max_changes = np.zeros(q_table_height, dtype=int)
+        # And the below will say how long it went w/o a change
+        q_table_row_max_streak = np.zeros(q_table_height, dtype=int)
+
         # This is to follow the evolution of the scoring
-        filename = f"score_track_progress_episodes_{NUM_EPISODES/1e6}M_LR_{learning_rate}_DIS_{discount}.txt"
+        filename = f"score_track_progress_episodes_{NUM_EPISODES/1e6}M_LR_{learning_rate_init}_DIS_{discount}.txt"
         with open(filename, "w") as f:
-            f.write(f"episode\teps\tscore\tbonus\tstraight\tfull\tlow\thigh\tyum\n")
+            f.write(f"episode\teps\tlr\tscore\tbonus\tstraight\tfull\tlow\thigh\tyum\n")
 
         for episode in range(NUM_EPISODES + 1):
 
@@ -58,7 +76,11 @@ class KeepingTrain:
                 turn += 1
                 self.print_cond(self.trace_reward, f"----------\nTurn = {turn}")
                 self.dice.reset()
-                self.dice.roll()
+                # This is to try to fill in the "empty spaces" of the q table
+                if one_in_x_chances(30):
+                    self.dice.roll_Triplet_Naive()
+                else:
+                    self.dice.roll()
                 self.print_cond(self.trace_reward, f"\ninitial roll = {self.dice}")
                 # max_die_count: it's back
                 if not self.score.is_above_the_line_all_scored():
@@ -247,30 +269,50 @@ class KeepingTrain:
                     # SCORE CATEGORY <---
 
                     # Q UPDATE --->
-                    # should be similar to:
+
+                    # for tracking, keep the max arg before update:
+                    winner_action_pre = q_table_keeping[state_index][0:NUM_KEEPING_ACTIONS].argmax()
+
                     max_future_q = np.max(q_table_keeping[new_state_index][action])
 
                     current_q = q_table_keeping[state_index][action]
 
                     new_q = (1 - learning_rate) * current_q + learning_rate * \
                             (reward + discount * max_future_q)
-                    #
+
                     # # Update Q table with new Q value
                     q_table_keeping[state_index][action] = new_q
 
+                    # Indicate you visited this state
+                    q_table_row_visit[state_index] += 1
+                    if q_table_row_visit[state_index] == 1:  # first time here
+                        # set streak to 0
+                        q_table_row_max_streak[state_index] = 0
+                    # And has the row changed?
+                    if winner_action_pre != q_table_keeping[state_index][0:NUM_KEEPING_ACTIONS].argmax():
+                        q_table_row_max_changes[state_index] += 1
+                        # reset streak
+                        q_table_row_max_streak[state_index] = 0
+                    else:
+                        # start streak
+                        q_table_row_max_streak[state_index] += 1
                 all_scored = self.score.all_scored()
 
             # Decaying is being done every episode if episode number is within decaying range
             if do_epsilon:
                 if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:
                     epsilon -= self.epsilon_decay_value
+            # Decaying also LR
+            if decrease_learning_rate:
+                if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:  # same action range as epsilon
+                    learning_rate -= self.learning_rate_decay_value
 
             if episode % NUM_SHOW == 0:
-                print(f"episode = {episode} LR = {learning_rate} DIS = {discount}")
+                print(f"episode = {episode} LR = {learning_rate:.4f} DIS = {discount}")
                 scorecard_string = self.score.print_scorecard()
                 for score_line in scorecard_string:
                     print(score_line)
-                print("epsilon = ", epsilon)
+                print(f"epsilon = {epsilon:.4f}")
                 print("\n")
 
             # Track scoring: how does it evolve over time --->
@@ -294,25 +336,32 @@ class KeepingTrain:
                 track_score_array = np.add(track_score_array, np.array(self.score.get_above_the_line_success()))
 
             if episode != 0 and episode % NUM_TRACK_SCORE == 0:
-                filename = f"score_track_progress_episodes_{NUM_EPISODES/1e6}M_LR_{learning_rate}_DIS_{discount}.txt"
+                filename = f"score_track_progress_episodes_{NUM_EPISODES/1e6}M_LR_{learning_rate_init}_DIS_{discount}.txt"
                 with open(filename, "a") as f:
-                    f.write(f"{episode}\t{epsilon:.2f}\t{track_average_score / NUM_GAMES_IN_LINE_EVAL}")
+                    f.write(f"{episode}\t{epsilon:.2f}\t{learning_rate:.4f}\t{track_average_score / NUM_GAMES_IN_LINE_EVAL}")
                     for item in track_score_array:
                         f.write(f"\t{(item/NUM_GAMES_IN_LINE_EVAL):.2f}")
                     f.write("\n")
-            # Track scoring: how does it evolve over time <---
 
-            # if episode != 0 and episode % EVAL_Q_TABLE == 0:
-            #     # Evaluate q table
-            #     # compare the new q_table maxes to the previous ones
-            #     # and count the number of differences
-            #     count_diff_maxes = 0
-            #     for q_table_row in range(0, q_table_height):
-            #         # identify differences
-            #         if q_table_track_max[q_table_row] != q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax():
-            #             count_diff_maxes += 1
-            #         # update q_table_track_max for comparison next EVAL_Q_TABLE
-            #         q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
-            #     print(f"q_table_diff = {count_diff_maxes}\n")
-            #     with open("q_table_track_progress.txt", "a") as f:
-            #         f.write(f"{episode}\t{count_diff_maxes}\n")
+            # Track q_table: how does it evolve over time <---
+            if episode != 0 and episode % EVAL_Q_TABLE == 0:
+                # Evaluate q table
+                # compare the new q_table maxes to the previous ones
+                # and count the number of differences
+                count_diff_maxes = 0
+                for q_table_row in range(0, q_table_height):
+                    # identify differences
+                    if q_table_track_max[q_table_row] != q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax():
+                        count_diff_maxes += 1
+                    # update q_table_track_max for comparison next EVAL_Q_TABLE
+                    q_table_track_max[q_table_row] = q_table_keeping[q_table_row][0:NUM_KEEPING_ACTIONS].argmax()
+                print(f"q_table_diff = {count_diff_maxes}\n")
+                with open("q_table_track_progress.txt", "a") as f:
+                    f.write(f"{episode}\t{count_diff_maxes}\n")
+
+        with open("q_table_row_visit.txt", "w") as f:
+            for num_row_visit, q_table_row_max_changes, q_table_row_streak in \
+                    zip(q_table_row_visit, q_table_row_max_changes, q_table_row_max_streak):
+                f.write(f"{num_row_visit}\t{q_table_row_max_changes}\t{q_table_row_streak}\n")
+
+
