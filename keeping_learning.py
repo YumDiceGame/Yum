@@ -5,6 +5,7 @@
 import os
 import pickle
 import numpy as np
+import sys, select
 
 from do_keep_action_q_table import action_q_table
 from do_q_table import do_q_table_rows
@@ -84,6 +85,12 @@ if Save_q_table:
 
 # If you want to train a long one and want to shutdown unattended
 if Auto_shutdown:
-    os.system("shutdown -P now")
+    print("Hit <Enter> to abort shutdown --> ")
+    i, o, e = select.select([sys.stdin], [], [], 600)
+    if (i):
+        print("Shutdown aborted")
+    else:
+        print("Shutting down ...")
+        os.system("shutdown -P now")
 
 

@@ -108,6 +108,20 @@ class DiceSet:
         self._dice = sorted(self._dice)
         self.as_dict()
 
+    def roll_two_pairs(self):
+        dice = [i for i in range(1, NUM_DIE_FACES+1)]
+        dice_rolled = np.random.choice(dice, size=3, replace=False)
+        self._dice = [dice_rolled[0], dice_rolled[0], dice_rolled[1], dice_rolled[1], dice_rolled[2]]
+        self._dice = sorted(self._dice)
+        self.as_dict()
+
+    def roll_singletons(self):
+        dice = [i for i in range(1, NUM_DIE_FACES+1)]
+        dice_rolled = np.random.choice(dice, size=5, replace=False)
+        self._dice = [dice_rolled[0], dice_rolled[1], dice_rolled[2], dice_rolled[3], dice_rolled[4]]
+        self._dice = sorted(self._dice)
+        self.as_dict()
+
     def roll_Heavy(self):
         # slants the roll towards high values
         for i in range(0, NUM_DICE):
@@ -127,6 +141,21 @@ class DiceSet:
             self._dice[i] = die
         self._dice = sorted(self._dice)
         self.as_dict()
+
+    def roll_special(self, prob_parameter):
+        # This will either do a standard roll, or a special roll
+        rand_number = np.random.randint(0, prob_parameter)
+        if rand_number != prob_parameter - 1:
+            self.roll()
+        else:
+            # Choose a special:
+            rand_number = np.random.randint(1, 7)
+            if 1 <= rand_number < 4:
+                self.roll_Triplet_Naive()
+            elif 4 <= rand_number < 6:
+                self.roll_two_pairs()
+            else:
+                self.roll_singletons()
 
     def roll_list_reroll(self):  # uses list reroll to mask
         j = 0
@@ -195,6 +224,7 @@ class DiceSet:
     def set(self, _dice):
 
         self._dice = _dice
+        self._dice = sorted(self._dice)
         self.as_dict()
 
     def get_die_at_pos(self, pos):

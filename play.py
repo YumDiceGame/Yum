@@ -10,12 +10,10 @@ from score import *
 from constants import *
 import pickle
 import numpy as np
-from numpy import ma
 from do_q_table import do_q_table_rows
 from do_keep_action_q_table import action_q_table
 import matplotlib.pyplot as plt
 import os
-import re
 
 def french(category):
     if category == 'Ones':
