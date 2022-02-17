@@ -1,4 +1,4 @@
-data = dlmread("./PycharmProjects/Yum/score_track_progress_episodes_12.0M_LR_0.5_DIS_0.7.txt");
+data = dlmread("./PycharmProjects/Yum/score_track_progress_episodes_9.0M_LR_0.5_DIS_0.7.txt");
 # data = dlmread("./PycharmProjects/Q_tables_and_backups/score_track_progress_episodes_8.0M_LR_0.15_DIS_0.85_clean.txt");
 data2 = data(2:end,:);
 wdw_sz = 10

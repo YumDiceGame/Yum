@@ -1,7 +1,5 @@
 # Core of the keeping training
 
-import random
-from dice import *
 from score import *
 from utilities import *
 
@@ -65,6 +63,8 @@ class KeepingTrain:
         with open(filename, "w") as f:
             f.write(f"episode\teps\tlr\tscore\tbonus\tstraight\tfull\tlow\thigh\tyum\n")
 
+        len_all_dice_rolls = len(list_all_dice_rolls)
+
         for episode in range(NUM_EPISODES + 1):
 
             turn = 0
@@ -74,33 +74,23 @@ class KeepingTrain:
 
             while not all_scored:
                 turn += 1
-                self.print_cond(self.trace_reward, f"----------\nTurn = {turn}")
                 self.dice.reset()
-                # This is to try to fill in the "empty spaces" of the q table
-                if one_in_x_chances(30):
-                    self.dice.roll_Triplet_Naive()
-                else:
-                    self.dice.roll()
-                self.print_cond(self.trace_reward, f"\ninitial roll = {self.dice}")
+
+                #self.dice.roll()
+                # Roll with uniform probability
+                # meaning 55555 is equally probable as 11245
+                # self.dice.roll_uniform()
+                self.dice.set(list_all_dice_rolls[np.random.randint(0, len_all_dice_rolls)])
+
                 # max_die_count: it's back
                 if not self.score.is_above_the_line_all_scored():
                     max_die_count_previous, face_max_die_count = self.dice.max_die_count_for_available_category(
                         self.score.get_available_cat_vector())
 
-                # for tracking when you have almost straight, full or yum
-                almost_straight_list_per_roll = []
-                almost_full_list_per_roll = []
-                # list of rolls too
-                list_of_rolls = []
-
-                almost_straight_list_per_roll.append(self.dice.is_almost_straight())
-                almost_full_list_per_roll.append(self.dice.is_almost_full())
-                list_of_rolls.append(self.dice.as_short_string())
-
                 potential_max_score_previous, potential_max_score_category_previous = \
                     self.score.get_potential_max_score(self.dice)
-                self.print_cond(self.trace_reward, f"initial pot max = {potential_max_score_previous} "
-                                                   f"initial pot max cat = {potential_max_score_category_previous}")
+                # self.print_cond(self.trace_reward, f"initial pot max = {potential_max_score_previous} "
+                #                                    f"initial pot max cat = {potential_max_score_category_previous}")
 
                 for roll in range(2, NUM_ROLLS + 1):
 
@@ -126,14 +116,6 @@ class KeepingTrain:
                     self.dice.make_list_reroll_for_selected_die_faces(action_to_dice_to_keep[action])
                     self.dice.roll_list_reroll()
 
-                    # for tracking when you have almost straight full or yum
-                    almost_straight_list_per_roll.append(self.dice.is_almost_straight())
-                    almost_full_list_per_roll.append(self.dice.is_almost_full())
-                    list_of_rolls.append(self.dice.as_short_string())
-
-                    self.print_cond(self.trace_reward, f"action {action} "
-                                                       f" list re-roll {self.dice.get_list_reroll()}"
-                                                       f" new dice = {self.dice}")
 
                     # KEEPING ACTION <---
 
@@ -158,60 +140,29 @@ class KeepingTrain:
                         max_die_count = 0
 
                     potential_max_score, potential_max_score_category = self.score.get_potential_max_score(self.dice)
-                    self.print_cond(self.trace_reward, f"pot max score = {potential_max_score}, "
-                                                       f"{potential_max_score_category}")
-                    #
+
                     reward = -1
 
                     if potential_max_score == 50: # Now valuing dice at 10 per
                         reward = 15  # Max!
-                        self.print_cond(self.trace_reward, f"max_reward = {reward}")
                     elif potential_max_score == 35:  # full case
                         reward = 12
                     elif 40 <= potential_max_score < 50:
                         reward = 10
-                        self.print_cond(self.trace_reward, f"reward 40 50 = {reward}")
                     elif 21 <= potential_max_score <= 30:
                         reward = 7.5
-                        self.print_cond(self.trace_reward, f"reward 21 30 = {reward}")
                     elif potential_max_score > potential_max_score_previous:
                         reward = 5
-                        self.print_cond(self.trace_reward,
-                                        f"reward potential_max_score > potential_max_score_previous = {reward}")
                     elif potential_max_score_previous > potential_max_score:
                         if potential_max_score_previous >= (potential_max_score+25):
                             reward = -20
-                            self.print_cond(self.trace_reward,
-                                            f"potential_max_score_previous >= (potential_max_score+25) = {reward}")
                         else:
                             reward = -10
-                            self.print_cond(self.trace_reward,
-                                            f"potential_max_score_previous > potential_max_score = {reward}")
                     elif potential_max_score_previous == potential_max_score:
                         reward = -7.5  # was - 5 for the 20M training
-                        self.print_cond(self.trace_reward,
-                                        f"potential_max_score_previous == potential_max_score = {reward}")
                         if potential_max_score_previous == potential_max_score == 0:  # it's worse
                             reward = -25  # This just added after the 20M training
-                            self.print_cond(self.trace_reward,
-                                            f"stuck at zero reward = {reward}")
 
-                    # For encouraging to try straight
-                    # if self.score.is_category_available('Straight'):
-                    #     if potential_max_score < 20:  # was < 21 !!
-                    #         if not self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
-                    #                 not almost_straight_list_per_roll[roll-1]:
-                    #             reward -= 200
-                    #     elif self.dice.is_straight() and almost_straight_list_per_roll[roll-2] and \
-                    #             (DiceSet.dice_difference(list_of_rolls[roll-1], list_of_rolls[roll-2]) == 1):
-                    #         reward += 150
-
-                    # For encouraging Full - not sure it's working
-                    # if self.score.is_category_available('Full') and not self.dice.is_full() and potential_max_score < 21:
-                    #     if almost_full_list_per_roll[roll-2] and not almost_full_list_per_roll[roll-1]:
-                    #         # we got further away from full
-                    #         reward += -15  # += to hedge your bets was -3.5
-                    #         self.print_cond(self.trace_reward, f"full punishment = {reward}")
 
                     # "Heuristics" zone
                     # Correlating rewards with actions ... not ideal but it works
@@ -258,14 +209,11 @@ class KeepingTrain:
                         # with reduced:
                         category_scored = q_table_scoring[new_state_index] + 1
                         self.score.score_a_category(score_int_to_cat(category_scored), self.dice)
-                        self.print_cond(self.trace_reward, f"cat scored {score_int_to_cat(category_scored)} "
-                                    f"scored amount {self.score.get_category_score(score_int_to_cat(category_scored))}")
                         # cumulative_score += self.score.get_category_score(score_int_to_cat(category_scored))
                         if score_int_to_cat(category_scored) in ABOVE_THE_LINE_CATEGORIES:
                             # penalty for anything less than 5 of a kind
                             penalty = 5 * (NUM_DICE - (self.score.get_category_score(score_int_to_cat(category_scored)) / category_scored))
                             reward -= penalty
-                            self.print_cond(self.trace_reward, f"last turn reward = {reward} penalty = {penalty}")
                     # SCORE CATEGORY <---
 
                     # Q UPDATE --->
@@ -360,8 +308,10 @@ class KeepingTrain:
                     f.write(f"{episode}\t{count_diff_maxes}\n")
 
         with open("q_table_row_visit.txt", "w") as f:
+            row_number = 0
             for num_row_visit, q_table_row_max_changes, q_table_row_streak in \
                     zip(q_table_row_visit, q_table_row_max_changes, q_table_row_max_streak):
-                f.write(f"{num_row_visit}\t{q_table_row_max_changes}\t{q_table_row_streak}\n")
+                f.write(f"{row_number}\t{num_row_visit}\t{q_table_row_max_changes}\t{q_table_row_streak}\n")
+                row_number += 1
 
 
