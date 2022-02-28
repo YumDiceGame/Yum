@@ -10,13 +10,13 @@ NUM_SCORE_CAT_ABOVE_LINE = 6
 ABOVE_THE_LINE_CATEGORIES = ['Ones', 'Twos', 'Threes', 'Fours', 'Fives', 'Sixes']
 # Column numbers of categories in score table
 YUM_COL = 6 # Cat7 - 1 for pos
-# LEARNING_RATE = 0.2  # was 0.1 till 9/25/21  the 0.2, 0.275 gave good results
-# DISCOUNT = 0.4  # was 0.95 till 9/21/21.  0.75, 0.725 gave great results for above the line 0.7, 0.5 ok
-NUM_EPISODES = 9_000_000
+LEARNING_RATE = 0.2  # need uncommented for scoring learning
+DISCOUNT = 0.4  # need uncommented for scoring learning
+NUM_EPISODES = 25_000_000
 START_EPSILON_DECAYING = 1  # 1_000_000
 END_EPSILON_DECAYING = (NUM_EPISODES-1_000_000)-1
 EVAL_Q_TABLE = 100_000  # time to evaluate q table for convergence
-NUM_GAMES = 1000
+NUM_GAMES = 2000
 NUM_GAMES_IN_LINE_EVAL = 100
 NUM_KEEPING_ACTIONS = 61
 Q_TABLE_SAVE_INTERVAL = 12_000_000

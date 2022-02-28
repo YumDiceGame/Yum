@@ -41,7 +41,7 @@ class KeepingTrain:
         # Initial LR is the one passed in as "learning_rate"
         learning_rate = learning_rate_init
         if decrease_learning_rate:
-            learning_rate_final = 0.05  # Somewhat arbitrary
+            learning_rate_final = 0.1  # Somewhat arbitrary
             self.learning_rate_decay_value = (learning_rate_init-learning_rate_final) / (END_EPSILON_DECAYING - START_EPSILON_DECAYING)
         else:
             self.learning_rate_decay_value = 0
@@ -50,6 +50,7 @@ class KeepingTrain:
         track_score_array = np.zeros(6)
         q_table_height = len(q_table_keeping)
         q_table_track_max = np.zeros(q_table_height)
+        tracking_score = False  # will become True during the eval window
 
         # We want to track how many times each row is visited
         q_table_row_visit = np.zeros(q_table_height, dtype=int)
@@ -69,18 +70,21 @@ class KeepingTrain:
 
             turn = 0
             self.score.reset_scores()
-            all_scored = False
-            #cumulative_score = 0
+            # Starting with "random" score table (unless you're evaluating)
+            if not tracking_score:
+                num_starting_cats = self.score.seed_score_table()
+            all_scored = self.score.all_scored()
 
             while not all_scored:
                 turn += 1
                 self.dice.reset()
 
-                #self.dice.roll()
                 # Roll with uniform probability
                 # meaning 55555 is equally probable as 11245
-                # self.dice.roll_uniform()
-                self.dice.set(list_all_dice_rolls[np.random.randint(0, len_all_dice_rolls)])
+                if not tracking_score:
+                    self.dice.set(list_all_dice_rolls[np.random.randint(0, len_all_dice_rolls)])
+                else:
+                    self.dice.roll()
 
                 # max_die_count: it's back
                 if not self.score.is_above_the_line_all_scored():
@@ -173,7 +177,7 @@ class KeepingTrain:
                     #     reward += -250  # got 9/1775 bad keep alls with this, about the same as when corr. to action
                     # Punish bad keep all actions
                     if self.dice.is_keep_all() and potential_max_score < 21:
-                        reward += -100
+                        reward += -250  # was 100
                     if action_to_dice_to_keep[action] == {'K4'}:
                         # Punish bad K4 action (bad meaning Straight isn't avail but we are doing action K4
                         if not self.score.is_category_available('Straight'):
@@ -265,7 +269,7 @@ class KeepingTrain:
 
             # Track scoring: how does it evolve over time --->
             if (episode + NUM_GAMES_IN_LINE_EVAL - 1) % NUM_TRACK_SCORE == 0:
-                track_score = True
+                tracking_score = True
                 # we are going to set epsilon to 0 for the eval (table actions only matter)
                 # store the current epsilon
                 epsilon_mem = epsilon
@@ -274,7 +278,7 @@ class KeepingTrain:
                 track_average_score = 0
                 track_score_array = np.zeros(6)
             elif (episode % NUM_TRACK_SCORE == 0) and (episode != 0):
-                track_score = False
+                tracking_score = False
                 epsilon = epsilon_mem  # restore epsilon to resume training
                 # print(f"restoring epsilon {epsilon} at episode {episode}")
             if self.track_score:

@@ -34,10 +34,10 @@ if tracking_style:
     # read those three above from file
     with open("q_table_row_visit.txt", "r") as f:
         while line := f.readline():
-            m = re.search('(\d+)\t(\d+)\t(\d+)', line)
-            q_table_row_visit.append(m.group(1))
-            q_table_row_max_changes.append(m.group(2))
-            q_table_row_streak.append(m.group(3))
+            m = re.search('(\d+)\t(\d+)\t(\d+)\t(\d+)', line)
+            q_table_row_visit.append(m.group(2))
+            q_table_row_max_changes.append(m.group(3))
+            q_table_row_streak.append(m.group(4))
     # Include also winning action
     with open("q_table_keeping_reduced.pickle", "rb") as f:
         q_table_keeping_reduced = pickle.load(f)
@@ -162,7 +162,7 @@ elif tracking_style:
                                                                   q_table_keeping_reduced):
             short_row = str(row).strip('[]').replace("'", '').replace(',', '').replace(' ', '')
             row_to_write = str(row_number).rjust(7) + " " + short_row[0:NUM_DICE] + " " + \
-                           short_row[NUM_DICE:].rjust(13) + " " + str(row_visit).rjust(6) + " " + \
+                           short_row[NUM_DICE:].rjust(13) + " " + str(row_visit).rjust(6) + "|" + \
                            str(row_change).rjust(5) + " " + str(row_streak).rjust(5) + " " + str(action)
             write_file.write(row_to_write)
             write_file.write('\n')
