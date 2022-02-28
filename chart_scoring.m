@@ -1,7 +1,7 @@
-data = dlmread("./PycharmProjects/Yum/score_track_progress_episodes_9.0M_LR_0.5_DIS_0.7.txt");
+data = dlmread("./PycharmProjects/Yum/score_track_progress_episodes_25.0M_LR_0.5_DIS_0.7.txt");
 # data = dlmread("./PycharmProjects/Q_tables_and_backups/score_track_progress_episodes_8.0M_LR_0.15_DIS_0.85_clean.txt");
 data2 = data(2:end,:);
-wdw_sz = 10
+wdw_sz = 20
 figure(2, 'position', [250, 250, 1250, 1000])
 subplot(3, 3, 1)
 ##plot(data2(:,1), data2(:,3))
@@ -53,3 +53,6 @@ subplot(3, 3, 9)
 plot(data2(:,1), data2(:,3))
 grid on
 title("lr")
+q_table_track_data = dlmread("./PycharmProjects/Yum/q_table_track_progress.txt");
+figure
+semilogy(q_table_track_data(:,2))

@@ -17,15 +17,17 @@ from constants import *
 import pickle
 import random
 import os
+import sys, select
 from do_q_table import do_q_table_rows
 import numpy as np
 from q_table_reduction import reduce_q_table
+from do_keep_action_q_table import action_q_table
 
 do_epsilon = True
 Testing_Seq = False
 Use_prior_q_table = False
 Save_q_table = True
-Auto_shutdown = False
+Auto_shutdown = True
 PRINT = False
 PRINT_L2 = False
 track_diff = False
@@ -41,6 +43,11 @@ else:
 # create q_table_rows
 q_table_rows, list_of_die_face_counts, list_scoreable_categories = do_q_table_rows()
 q_table_height = len(q_table_rows)  # this is 516096 !!!
+
+# For list of dice rolls:
+action_table = action_q_table()
+list_all_dice_rolls = action_table.do_list_of_dice_rolls()
+len_all_dice_rolls = len(list_all_dice_rolls)
 
 # Load q-table
 # see "do q_table.py" for info
@@ -82,33 +89,19 @@ for episode in range(1, NUM_EPISODES):
     Turn_for_injection = np.random.randint(1, NUM_SCORE_CATEGORIES+1)
 
     score.reset_scores()
-    all_scored = False
+    score.seed_score_table()  # starting the game with random score categories already set
+    all_scored = score.all_scored()
     Turn = 1
 
     while not all_scored:
 
         myDice.reset_num_rolls()
+        # not useful, no re-rolls
         myDice.reset_list_reroll()
 
-        if PRINT:
-            print("***")
-
-        # Inject some Yums, Straights and Fulls so that the algorithm can see enough of them
-        if Turn == Turn_for_injection:
-            if episode % 8 == 0:
-                myDice.roll_Yum()
-            elif episode % 7 == 0:
-                myDice.roll_Straight()
-            elif episode % 6 == 0:
-                myDice.roll_Full()
-            elif episode % 9 == 0:
-                myDice.roll_Heavy()
-        else:
-            myDice.roll()
-
-        # elif Testing_Seq:
-        #     # Set dice to pre-programmed sequence for quick test
-        #     myDice.seq(Turn)
+        # Roll with uniform probability in terms of dictionary
+        # i.e. "44444" is as probable as "11335"
+        myDice.set(list_all_dice_rolls[np.random.randint(0, len_all_dice_rolls)])
 
         # The state now is a concatenation of the dice dict and scored cats
         state = myDice.get_dict_as_vector() + score.get_available_cat_vector()
@@ -230,12 +223,6 @@ for episode in range(1, NUM_EPISODES):
             # Scratching a category --->
             if scored_amount == 0:
                 reward -= score.scratch_penalty(scored_cat)
-                # if episode % num_show == 0:
-                #     print(f"scratch {reward}")
-            # Scratching a category <---
-
-        # if episode % num_show == 0:
-        #     print("reward end of turn = ", reward)
 
         # New state
         new_state = myDice.get_dict_as_vector() + score.get_available_cat_vector()
@@ -314,7 +301,13 @@ with open("q_table_scoring_reduced.pickle", "wb") as f:
 
 # If you want to train a long one and want to shutdown unattended
 if Auto_shutdown:
-    os.system("shutdown -P now")
+    print("Hit <Enter> to abort shutdown --> ")
+    i, o, e = select.select([sys.stdin], [], [], 900)
+    if (i):
+        print("Shutdown aborted")
+    else:
+        print("Shutting down ...")
+        os.system("shutdown -P now")
 
 
 

@@ -81,6 +81,7 @@ full_counter = 0
 lo_counter = 0
 hi_counter = 0
 bad_action_K4_counter = 0
+bad_keep_all_counter = 0
 empty_set = set()
 score_straight_fails = 0
 score_full_fails = 0
@@ -90,6 +91,7 @@ action_histo = np.zeros(len(list_set_keep_actions))
 total_actions = 0
 
 all_scored = False
+num_K4_worked = 0
 
 for game_number in range(NUM_GAMES):
 
@@ -112,6 +114,7 @@ for game_number in range(NUM_GAMES):
 
         straight_detected = False
         full_detected = False
+        K4_action = False
 
         myDice.roll()
 
@@ -158,10 +161,14 @@ for game_number in range(NUM_GAMES):
 
                 kept_all = False
 
+                if list_set_keep_actions[action] == {'K4'}:
+                    K4_action = True
+
                 if list_set_keep_actions[action] == {'K4'} and not score.is_category_available('Straight'):
                     bad_action_K4_counter += 1
-                    # if print_record_games:
-                    #     game_events_to_record.append(f" BAD ACTION 60 ")
+                    if print_record_games:
+                        game_events_to_record.append(f" BAD ACTION 60 ")
+
                 # About to commit action to reroll
                 myDice.make_list_reroll_for_selected_die_faces(list_set_keep_actions[action])
 
@@ -185,6 +192,8 @@ for game_number in range(NUM_GAMES):
                     elif dice_set_before_reroll == list_set_keep_actions[action]:
                         game_events_to_record.append(f" keep all dice")
                         kept_all = True
+                        if score.get_potential_max_score(myDice) == 0:  # Keep all with no good score outcome!
+                            game_events_to_record.append("pot max zero but kept all")
                         game_events_to_record.append(f" row {q_table_keeping_rows_index}\n")
                         break  # no need to keep going with more rolls
                     else:
@@ -236,6 +245,11 @@ for game_number in range(NUM_GAMES):
         # category_scored = score.score_with_q_table(q_table_scoring, q_table_scoring_rows_index, myDice)
         # Now if using the reduced size scoring q_table
         category_scored = q_table_scoring[q_table_scoring_rows_index] + 1
+
+        # See how often K4 works
+        if score_int_to_cat(category_scored) == 'Straight' and K4_action:
+            num_K4_worked += 1
+
         # score_data.append(score.category_scored_one_hot(category_scored))
         # # the below is for writing the score data to file:
         # with open("score_data.txt", "a") as score_data_file:
@@ -262,6 +276,7 @@ for game_number in range(NUM_GAMES):
                 # full_score_failed = True
                 score_full_fails += 1
             if kept_all and score.get_category_score(score_int_to_cat(category_scored)) == 0:
+                bad_keep_all_counter += 1
                 game_events_to_record.append(f"Bad keep all\n")
 
         if narrate_games:
@@ -323,9 +338,11 @@ if not narrate_games:
     print(f"full count = {full_counter}")
     print(f"lo count = {lo_counter}")
     print(f"hi count = {hi_counter}")
-    # print(f"bad action 60 happened {bad_action_60_counter} times")
-    # print(f"straight score fails = {score_straight_fails}")
-    # print(f"full score fails = {score_full_fails}")
+    print(f"bad action 60 happened {bad_action_K4_counter} times")
+    print(f"bad keep all happened {bad_keep_all_counter} times")
+    print(f"straight score fails = {score_straight_fails}")
+    print(f"full score fails = {score_full_fails}")
+    print(f"K4 worked {num_K4_worked} times ratio {num_K4_worked / straight_counter}")
 
 if print_record_games:
     game_events_to_record.append(f"\nSummary: \n")
@@ -338,9 +355,11 @@ if print_record_games:
     game_events_to_record.append(f"full count = {full_counter}\n")
     game_events_to_record.append(f"lo count = {lo_counter}\n")
     game_events_to_record.append(f"hi count = {hi_counter}\n")
-    # game_events_to_record.append(f"table action 60 happened {bad_action_60_counter} times\n")
-    # game_events_to_record.append(f"straight score fails = {score_straight_fails}\n")
-    # game_events_to_record.append(f"full score fails = {score_full_fails}\n")
+    game_events_to_record.append(f"table action 60 happened {bad_action_K4_counter} times\n")
+    game_events_to_record.append(f"bad keep all happened {bad_keep_all_counter} times\n")
+    game_events_to_record.append(f"straight score fails = {score_straight_fails}\n")
+    game_events_to_record.append(f"full score fails = {score_full_fails}\n")
+    game_events_to_record.append(f"K4 worked {num_K4_worked} times ratio {num_K4_worked/straight_counter} \n")
 
 if print_record_games:
     with open("games.txt", "wt") as file_record_games:

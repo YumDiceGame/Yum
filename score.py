@@ -1,6 +1,7 @@
 from constants import *
 from dice import DiceSet
 from numpy import ma
+import numpy as np
 
 class Score:
     ''' For scoring categories
@@ -355,6 +356,21 @@ class Score:
             penalty = 75
         return penalty
 
+    def seed_score_table(self):
+        '''
+        This is to initialize the score table with some of the categories already scored (to 0)
+        The goal is to randomize a bit the score table, with the intent of having fewer zeros in the
+        keeping q table
+        '''
+        num_cats_avail = 0
+        for category in self._scores:
+            flip_a_coin = np.random.randint(0, 2)
+            if flip_a_coin == 0:
+                self._scores[category][0] = False
+                num_cats_avail += 1
+            else:
+                self._scores[category][0] = True
+        return num_cats_avail
 
 def score_cat_to_int(category_name):
 

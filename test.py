@@ -14,16 +14,28 @@ dice = DiceSet()
 #     dice.roll_special(10)
 #     print(dice)
 
-dice.set([1,2,3,4,5])
-print(dice)
+score = Score()
+# 1
+dice.set([3, 3, 3, 3, 4])
+score.score_a_category('Threes',dice)
+# 2
+dice.set([4, 5, 5, 5, 6])
+score.score_a_category('Fives',dice)
+# 3
+dice.set([2, 3, 4, 5, 6])
+score.score_a_category('Straight',dice)
+# 4
+dice.set([4, 5, 6, 6, 6])
+score.score_a_category('Sixes',dice)
+# 5
+dice.set([3, 4, 6, 6, 6])
+score.score_a_category('High',dice)
+# 6
+dice.set([1, 2, 4, 4, 4])
+score.score_a_category('Fours',dice)
+# 7
+dice.set([3, 5, 5, 6, 6])
+print("pot max = ", score.get_potential_max_score(dice))
 
-action_q_table_ = action_q_table()
-full_dice_list = action_q_table_.do_list_of_dice_rolls()
-print("hi")
-# print("Hit <Enter> to abort shutdown --> ")
-#
-# i, o, e = select.select([sys.stdin], [], [], 600)
-# if (i):
-#     print("Shutdown aborted")
-# else:
-#     print("Shutting down ...")
+
+print(score.print_scorecard())

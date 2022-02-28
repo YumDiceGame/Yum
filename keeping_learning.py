@@ -20,7 +20,7 @@ Save_q_table = True
 Auto_shutdown = True
 
 # Load scoring q table (reduced one ok):
-# 12/19/2021 8M training: using the "biased_to_full" scoring table
+# 12/19/2021 8M training: using the "biased_to_full" scoring table retrained 2/22/22
 with open("q_table_scoring_reduced_biased_to_full.pickle", "rb") as score_q_table_file:
     q_table_scoring = pickle.load(score_q_table_file)
 
